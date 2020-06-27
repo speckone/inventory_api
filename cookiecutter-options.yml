@@ -1,0 +1,9 @@
+default_context:
+    project_name: "inventory_api"
+    app_name: "inventory_api_app"
+    python_version: "3.7"
+    admin_user_username: "admin"
+    admin_user_email: "tyson.koger@gmail.com"
+    admin_user_password: "b1ueJay"
+    use_celery: "yes"
+    wsgi_server: "gunicorn"

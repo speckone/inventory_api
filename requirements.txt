@@ -5,6 +5,9 @@ flask-migrate
 flask-sqlalchemy
 flask-marshmallow
 flask-jwt-extended
+flask-cors
+twilio
+marshmallow-enum
 marshmallow-sqlalchemy
 python-dotenv
 passlib

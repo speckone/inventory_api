@@ -7,11 +7,6 @@ from inventory_api_app.api.schemas import InventorySchema, VendorSchema, UnitSch
 from inventory_api_app.extensions import ma, db
 from twilio.rest import Client
 
-account_sid = 'AC96a4051fe75797ab02d0a89fee374917'
-auth_token = '00c2f30612be330abc845e96aad35233'
-client = Client(account_sid, auth_token)
-
-
 class InventoryResource(Resource):
     """Single object resource
     ---
@@ -674,6 +669,9 @@ class OrderResource(Resource):
         # Compose SMS on order submit
         if request.json['status'] == OrderStatus.SUBMITTED.value:
             config = current_app.config
+            account_sid = config["TWILLIO_SID"]
+            auth_token = config["TWILLIO_TOKEN"]
+            client = Client(account_sid, auth_token)
             vendor = None
             order_info = list()
             for order_item in sorted(order_db.order_items, key=lambda o:o.product.vendor_id):

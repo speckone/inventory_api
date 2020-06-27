@@ -56,8 +56,6 @@ def login():
           description: bad request
       security: []
     """
-    print(request.is_json)
-    print(request.content_type)
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
 

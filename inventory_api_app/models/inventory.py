@@ -6,10 +6,10 @@ from datetime import datetime
 
 class Inventory(SurrogatePK, Model):
     __tablename__ = 'inventory'
-    quantity = Column(db.Integer, nullable=False)
-    capacity = Column(db.Integer, nullable=False)
+    quantity = Column(db.Float, nullable=False)
+    capacity = Column(db.Float, nullable=False)
     product_id = reference_col('product', unique=True)
-    reorder_level = Column(db.Integer, nullable=False)
+    reorder_level = Column(db.Float, nullable=False)
     product = relationship('Product', backref='inventory_items')
 
     def __repr__(self):
@@ -82,7 +82,7 @@ class Order(SurrogatePK, Model):
 
 class OrderItem(SurrogatePK, Model):
     __tablename__ = 'order_item'
-    quantity = Column(db.Integer)
+    quantity = Column(db.Float)
     order_id = reference_col('order')
     order = relationship('Order', backref='order_items')
     product_id = reference_col('product')

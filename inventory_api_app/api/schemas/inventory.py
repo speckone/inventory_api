@@ -7,7 +7,7 @@ from marshmallow_enum import EnumField
 
 class InventorySchema(ma.SQLAlchemyAutoSchema):
     running_low = fields.Boolean(dump_only=True)
-    needed_at_store = fields.Int(dump_only=True)
+    needed_at_store = fields.Float(dump_only=True)
     cost = fields.Float(dump_only=True)
 
     class Meta:

@@ -68,10 +68,16 @@ class Order(SurrogatePK, Model):
     date = Column(db.DateTime)
     status = Column(db.Enum(OrderStatus))
 
+    @property
+    def cost(self):
+        total = 0
+        for order_item in self.order_items:
+            total += order_item.quantity * order_item.product.unit_price
+        return total
+
     def __init__(self):
         self.date = datetime.now()
         self.status = OrderStatus.NEW
-
 
 
 class OrderItem(SurrogatePK, Model):

@@ -679,6 +679,7 @@ class OrderResource(Resource):
                     order_info.append(f"{order_item.product.vendor}:")
                     vendor = order_item.product.vendor
                 order_info.append(f"{order_item.quantity} {order_item.product.unit.name}s of {order_item.product.name}")
+            order_info.append(f"Total cost: {order_db.cost:.2f}")
             message = client.messages.create(from_=config["FROM_PHONE"],
                                              to=config["TO_PHONE"],
                                              body="\n".join(order_info))

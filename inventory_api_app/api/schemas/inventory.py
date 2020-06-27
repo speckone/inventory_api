@@ -39,6 +39,7 @@ class VendorSchema(ma.SQLAlchemyAutoSchema):
 
 class OrderSchema(ma.SQLAlchemyAutoSchema):
     status = EnumField(OrderStatus, by_value=True)
+    cost = fields.Float(dump_only=True)
 
     class Meta:
         model = Order

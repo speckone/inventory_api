@@ -34,6 +34,8 @@ class Product(SurrogatePK, Model):
     unit_price = Column(db.Float, nullable=False)
     unit_id = reference_col('unit')
     unit = relationship('Unit', backref='products')
+    category_id = reference_col('category')
+    category = relationship('Category', backref='products')
     vendor_id = reference_col('vendor')
     vendor = relationship('Vendor', backref='products')
 
@@ -44,6 +46,17 @@ class Product(SurrogatePK, Model):
 class Unit(SurrogatePK, Model):
     __tablename__ = 'unit'
     name = Column(db.String, unique=True, nullable=False)
+
+    def __repr__(self):
+        return self.name
+
+
+class Category(SurrogatePK, Model):
+    __tablename__ = 'category'
+    name = Column(db.String, unique=True, nullable=False)
+
+    def __repr__(self):
+        return self.name
 
 
 class Vendor(SurrogatePK, Model):

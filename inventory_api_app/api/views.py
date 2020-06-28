@@ -5,9 +5,9 @@ from marshmallow import ValidationError
 
 from inventory_api_app.api.resources import UserResource, UserList, OrderList, OrderResource, OrderItemList, \
     OrderItemResource, ProductList, ProductResource, VendorList, VendorResource, UnitList, UnitResource, \
-    InventoryList, InventoryResource
+    InventoryList, InventoryResource, CategoryList, CategoryResource
 from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchema, VendorSchema, ProductSchema, \
-    OrderSchema, OrderItemSchema
+    OrderSchema, OrderItemSchema, CategorySchema
 from inventory_api_app.extensions import apispec
 from flask_cors import CORS
 
@@ -22,6 +22,8 @@ api.add_resource(InventoryResource, '/inventory/<int:inventory_id>', endpoint="i
 api.add_resource(InventoryList, '/inventory', endpoint="inventory")
 api.add_resource(UnitResource, '/unit/<int:unit_id>')
 api.add_resource(UnitList, '/unit')
+api.add_resource(CategoryResource, '/category/<int:category_id>')
+api.add_resource(CategoryList, '/category')
 api.add_resource(VendorResource, '/vendor/<int:vendor_id>')
 api.add_resource(VendorList, '/vendor')
 api.add_resource(ProductResource, '/product/<int:product_id>')
@@ -43,6 +45,9 @@ def register_views():
     apispec.spec.components.schema("UnitSchema", schema=UnitSchema)
     apispec.spec.path(view=UnitResource, app=current_app)
     apispec.spec.path(view=UnitList, app=current_app)
+    apispec.spec.components.schema("CategorySchema", schema=CategorySchema)
+    apispec.spec.path(view=CategoryResource, app=current_app)
+    apispec.spec.path(view=CategoryList, app=current_app)
     apispec.spec.components.schema("VendorSchema", schema=VendorSchema)
     apispec.spec.path(view=VendorResource, app=current_app)
     apispec.spec.path(view=VendorList, app=current_app)

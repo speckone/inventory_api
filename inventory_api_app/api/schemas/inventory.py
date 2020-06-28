@@ -1,8 +1,7 @@
-from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, OrderItem, OrderStatus
+from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, OrderItem, OrderStatus, Category
 from inventory_api_app.extensions import ma, db
 from marshmallow import fields
 from marshmallow_enum import EnumField
-
 
 
 class InventorySchema(ma.SQLAlchemyAutoSchema):
@@ -26,6 +25,13 @@ class ProductSchema(ma.SQLAlchemyAutoSchema):
 class UnitSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Unit
+        load_instance = True
+        include_relationships = True
+
+
+class CategorySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Category
         load_instance = True
         include_relationships = True
 

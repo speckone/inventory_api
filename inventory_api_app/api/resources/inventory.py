@@ -1,9 +1,9 @@
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
-from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, OrderItem, OrderStatus
+from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, OrderItem, OrderStatus, Category
 from inventory_api_app.api.schemas import InventorySchema, VendorSchema, UnitSchema, ProductSchema, OrderSchema, \
-    OrderItemSchema
+    OrderItemSchema, CategorySchema
 from inventory_api_app.extensions import ma, db
 from twilio.rest import Client
 
@@ -439,6 +439,152 @@ class UnitList(Resource):
         db.session.commit()
 
         return {"msg": "unit created", "unit": schema.dump(unit)}, 201
+
+
+class CategoryResource(Resource):
+    """Single object resource
+
+    ---
+    get:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: category_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category: CategorySchema
+        404:
+          description: category does not exists
+    put:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: category_id
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              CategorySchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: category updated
+                  category: CategorySchema
+        404:
+          description: category does not exists
+    delete:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: category_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: category deleted
+        404:
+          description: category does not exists
+    """
+    method_decorators = [jwt_required]
+
+    def get(self, category_id):
+        schema = CategorySchema()
+        category = Category.query.get_or_404(category_id)
+        return {"category": schema.dump(category)}
+
+    def put(self, category_id):
+        schema = CategorySchema(partial=True)
+        category = Category.query.get_or_404(category_id)
+        category = schema.load(request.json, instance=category, session=db.session)
+
+        db.session.commit()
+
+        return {"msg": "category updated", "category": schema.dump(category)}
+
+    def delete(self, category_id):
+        category = Category.query.get_or_404(category_id)
+        db.session.delete(category)
+        db.session.commit()
+
+        return {"msg": "category deleted"}
+
+
+class CategoryList(Resource):
+    """Creation and get_all
+
+    ---
+    get:
+      tags:
+        - api
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/CategorySchema'
+    post:
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              CategorySchema
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: category created
+                  category: CategorySchema
+    """
+    method_decorators = [jwt_required]
+
+    def get(self):
+        schema = CategorySchema(many=True)
+        query = Category.query
+        return schema.dump(query.all())
+
+    def post(self):
+        schema = CategorySchema()
+        category = schema.load(request.json, session=db.session)
+
+        db.session.add(category)
+        db.session.commit()
+
+        return {"msg": "category created", "category": schema.dump(category)}, 201
 
 
 class VendorResource(Resource):

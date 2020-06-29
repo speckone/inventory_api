@@ -17,7 +17,10 @@ class Inventory(SurrogatePK, Model):
 
     @property
     def running_low(self):
-        return self.quantity <= self.reorder_level
+        if self.reorder_level == 0:
+            return False
+        else:
+            return self.quantity <= self.reorder_level
 
     @property
     def needed_at_store(self):

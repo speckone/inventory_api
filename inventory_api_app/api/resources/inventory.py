@@ -904,10 +904,11 @@ class OrderList(Resource):
         db.session.add(order)
         inventory = Inventory.query.all()
         for item in inventory:
-            order_item = OrderItem(quantity=item.needed_at_store,
-                                   order_id=order.id,
-                                   product_id=item.product.id)
-            order_item.save()
+            if item.running_low:
+                order_item = OrderItem(quantity=item.needed_at_store,
+                                       order_id=order.id,
+                                       product_id=item.product.id)
+                order_item.save()
         db.session.commit()
 
         return {"msg": "order created", "order": schema.dump(order)}, 201

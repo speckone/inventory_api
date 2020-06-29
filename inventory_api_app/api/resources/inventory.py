@@ -291,6 +291,9 @@ class ProductList(Resource):
 
         db.session.add(product)
         db.session.commit()
+        inventory = Inventory(capacity=0, product_id=product.id, quantity=0, reorder_level=0)
+        db.session.add(inventory)
+        db.session.commit()
 
         return {"msg": "product created", "product": schema.dump(product)}, 201
 

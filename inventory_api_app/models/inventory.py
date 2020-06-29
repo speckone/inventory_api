@@ -21,7 +21,10 @@ class Inventory(SurrogatePK, Model):
 
     @property
     def needed_at_store(self):
-        return self.capacity - self.quantity
+        if self.quantity >= self.capacity:
+            return 0
+        else:
+            return self.capacity - self.quantity
 
     @property
     def cost(self):

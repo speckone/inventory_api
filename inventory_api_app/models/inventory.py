@@ -77,6 +77,7 @@ class OrderStatus(enum.Enum):
     NEW = 'New'
     SUBMITTED = 'Submitted'
     RECEIVED = 'Received'
+    CANCELLED = 'Cancelled'
 
     def __str__(self):
         return self.value

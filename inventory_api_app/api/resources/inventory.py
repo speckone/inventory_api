@@ -892,12 +892,26 @@ class OrderList(Resource):
 
     def get(self):
         schema = OrderSchema(many=True)
-        query = Order.query
+        if len(request.args) > 0:
+            if request.args['status']:
+                request_status = OrderStatus(request.args['status'])
+                query = Order.query.filter(Order.status == request_status)
+                print(query)
+            else:
+                query = Order.query
+        else:
+            query = Order.query.filter(Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED)))
+
         return schema.dump(query.all())
 
     def post(self):
         schema = OrderSchema()
         order_request = dict()
+        # Cancel open orders before creating new order
+        open_orders = Order.query.filter(Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED)))
+        for order in open_orders:
+            order.status = OrderStatus.CANCELLED
+            order.save()
         if request.json:
             order_request = request.json
         order = schema.load(order_request, session=db.session)

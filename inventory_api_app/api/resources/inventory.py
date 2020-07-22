@@ -7,6 +7,7 @@ from inventory_api_app.api.schemas import InventorySchema, VendorSchema, UnitSch
 from inventory_api_app.extensions import ma, db
 from twilio.rest import Client
 
+
 class InventoryResource(Resource):
     """Single object resource
     ---
@@ -324,7 +325,8 @@ class ProductHistoryResource(Resource):
 
     def get(self, product_id):
         schema = OrderSchema(many=True)
-        query = Order.query.join(OrderItem, Order.order_items).filter(OrderItem.product_id == product_id)
+        query = Order.query.join(OrderItem, Order.order_items).filter(OrderItem.product_id == product_id).filter(
+            Order.status == OrderStatus.RECEIVED)
         return schema.dump(query.all())
 
 
@@ -853,12 +855,13 @@ class OrderResource(Resource):
             client = Client(account_sid, auth_token)
             vendor = None
             order_info = list()
-            for order_item in sorted(order_db.order_items, key=lambda o:o.product.vendor_id):
+            for order_item in sorted(order_db.order_items, key=lambda o: o.product.vendor_id):
                 if vendor != order_item.product.vendor:
                     order_info.append(f"{order_item.product.vendor}:")
                     vendor = order_item.product.vendor
                     inventory = order_item.product.inventory_item[0]
-                order_info.append(f"{order_item.quantity} {order_item.product.unit.name}s of {order_item.product.name}({inventory.quantity})")
+                order_info.append(
+                    f"{order_item.quantity} {order_item.product.unit.name}s of {order_item.product.name}({inventory.quantity})")
             order_info.append(f"Total cost: {order_db.cost:.2f}")
             message = client.messages.create(from_=config["FROM_PHONE"],
                                              to=config["TO_PHONE"],

@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 
 from inventory_api_app.api.resources import UserResource, UserList, OrderList, OrderResource, OrderItemList, \
     OrderItemResource, ProductList, ProductResource, VendorList, VendorResource, UnitList, UnitResource, \
-    InventoryList, InventoryResource, CategoryList, CategoryResource
+    InventoryList, InventoryResource, CategoryList, CategoryResource, ProductHistoryResource
 from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchema, VendorSchema, ProductSchema, \
     OrderSchema, OrderItemSchema, CategorySchema
 from inventory_api_app.extensions import apispec
@@ -28,6 +28,7 @@ api.add_resource(VendorResource, '/vendor/<int:vendor_id>')
 api.add_resource(VendorList, '/vendor')
 api.add_resource(ProductResource, '/product/<int:product_id>')
 api.add_resource(ProductList, '/product')
+api.add_resource(ProductHistoryResource, '/product/<int:product_id>/history')
 api.add_resource(OrderItemResource, '/orderitem/<int:order_item_id>')
 api.add_resource(OrderItemList, '/orderitem')
 api.add_resource(OrderResource, '/order/<int:order_id>')
@@ -54,6 +55,7 @@ def register_views():
     apispec.spec.components.schema("ProductSchema", schema=ProductSchema)
     apispec.spec.path(view=ProductResource, app=current_app)
     apispec.spec.path(view=ProductList, app=current_app)
+    apispec.spec.path(view=ProductHistoryResource, app=current_app)
     apispec.spec.components.schema("OrderSchema", schema=OrderSchema)
     apispec.spec.path(view=OrderResource, app=current_app)
     apispec.spec.path(view=OrderList, app=current_app)

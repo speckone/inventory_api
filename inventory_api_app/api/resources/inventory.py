@@ -298,6 +298,36 @@ class ProductList(Resource):
         return {"msg": "product created", "product": schema.dump(product)}, 201
 
 
+class ProductHistoryResource(Resource):
+    """Single object resource
+    ---
+    get:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: product_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product: ProductSchema
+        404:
+          description: product does not exists
+    """
+    method_decorators = [jwt_required]
+
+    def get(self, product_id):
+        schema = OrderSchema(many=True)
+        query = Order.query.join(OrderItem, Order.order_items).filter(OrderItem.product_id == product_id)
+        return schema.dump(query.all())
+
+
 class UnitResource(Resource):
     """Single object resource
 

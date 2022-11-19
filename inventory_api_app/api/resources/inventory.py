@@ -867,12 +867,12 @@ class OrderResource(Resource):
                                              to=config["TO_PHONE"],
                                              body="\n".join(order_info))
             current_app.logger.debug(message.sid)
-        elif request.json['status'] == OrderStatus.RECEIVED.value:
-            for order_item in order_db.order_items:
-                inventory_item = Inventory.query.filter(Inventory.product_id == order_item.product_id).one()
-                inventory_item.quantity += order_item.quantity
-                inventory_item.save()
-                db.session.commit()
+        # elif request.json['status'] == OrderStatus.RECEIVED.value:
+            # for order_item in order_db.order_items:
+            #     inventory_item = Inventory.query.filter(Inventory.product_id == order_item.product_id).one()
+            #     inventory_item.quantity += order_item.quantity
+            #     inventory_item.save()
+            #     db.session.commit()
         return {"msg": "order updated", "order": schema.dump(order)}
 
     def delete(self, order_id):
@@ -943,7 +943,7 @@ class OrderList(Resource):
         # Cancel open orders before creating new order
         open_orders = Order.query.filter(Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED)))
         for order in open_orders:
-            order.status = OrderStatus.CANCELLED
+            order.status = OrderStatus.RECEIVED
             order.save()
         if request.json:
             order_request = request.json

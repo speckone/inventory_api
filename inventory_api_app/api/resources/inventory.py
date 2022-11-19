@@ -867,6 +867,8 @@ class OrderResource(Resource):
                                              to=config["TO_PHONE"],
                                              body="\n".join(order_info))
             current_app.logger.debug(message.sid)
+            order.status = OrderStatus.RECEIVED
+            db.session.commit()
         # elif request.json['status'] == OrderStatus.RECEIVED.value:
             # for order_item in order_db.order_items:
             #     inventory_item = Inventory.query.filter(Inventory.product_id == order_item.product_id).one()

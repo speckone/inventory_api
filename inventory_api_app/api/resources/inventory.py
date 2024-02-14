@@ -5,7 +5,8 @@ from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, Or
 from inventory_api_app.api.schemas import InventorySchema, VendorSchema, UnitSchema, ProductSchema, OrderSchema, \
     OrderItemSchema, CategorySchema
 from inventory_api_app.extensions import ma, db
-from twilio.rest import Client
+import smtplib
+from email.mime.text import MIMEText
 
 
 class InventoryResource(Resource):
@@ -847,12 +848,18 @@ class OrderResource(Resource):
         order = schema.load(request.json, instance=order_db, session=db.session)
         db.session.commit()
 
+        def send_email(subject, body, sender, recipients, password, smtp_host):
+            msg = MIMEText(body)
+            msg['Subject'] = subject
+            msg['From'] = sender
+            msg['To'] = ', '.join(recipients)
+            with smtplib.SMTP_SSL(smtp_host, 465) as smtp_server:
+                smtp_server.login(sender, password)
+                smtp_server.sendmail(sender, recipients, msg.as_string())
+
         # Compose SMS on order submit
         if request.json['status'] == OrderStatus.SUBMITTED.value:
             config = current_app.config
-            account_sid = config["TWILLIO_SID"]
-            auth_token = config["TWILLIO_TOKEN"]
-            client = Client(account_sid, auth_token)
             vendor = None
             order_info = list()
             for order_item in sorted(order_db.order_items, key=lambda o: o.product.vendor_id):
@@ -863,10 +870,8 @@ class OrderResource(Resource):
                 order_info.append(
                     f"{order_item.quantity} {order_item.product.unit.name}s of {order_item.product.name}({inventory.quantity})")
             order_info.append(f"Total cost: {order_db.cost:.2f}")
-            message = client.messages.create(from_=config["FROM_PHONE"],
-                                             to=config["TO_PHONE"],
-                                             body="\n".join(order_info))
-            current_app.logger.debug(message.sid)
+            send_email(subject="New inventory order", body="\n".join(order_info),sender=config["FROM_EMAIL"],
+                       recipients=[config["TO_EMAIL"],], password=config["EMAIL_PASS"], smtp_host=config["EMAIL_HOST"])
             order.status = OrderStatus.RECEIVED
             db.session.commit()
         # elif request.json['status'] == OrderStatus.RECEIVED.value:

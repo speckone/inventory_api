@@ -871,7 +871,7 @@ class OrderResource(Resource):
                     f"{order_item.quantity} {order_item.product.unit.name}s of {order_item.product.name}({inventory.quantity})")
             order_info.append(f"Total cost: {order_db.cost:.2f}")
             send_email(subject="New inventory order", body="\n".join(order_info),sender=config["FROM_EMAIL"],
-                       recipients=[config["TO_EMAIL"],], password=config["EMAIL_PASS"], smtp_host=config["EMAIL_HOST"])
+                       recipients=[config["TO_EMAIL"], ], password=config["EMAIL_PASS"], smtp_host=config["EMAIL_HOST"])
             order.status = OrderStatus.RECEIVED
             db.session.commit()
         # elif request.json['status'] == OrderStatus.RECEIVED.value:

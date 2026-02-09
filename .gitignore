@@ -81,6 +81,7 @@ celerybeat-schedule
 
 # db
 migrations
+pgdata/
 
 # IDE
 .idea

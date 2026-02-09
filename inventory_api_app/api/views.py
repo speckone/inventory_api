@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, jsonify
 from flask_restful import Api
-from flask_restful.utils import cors
 from marshmallow import ValidationError
+from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
 
 from inventory_api_app.api.resources import UserResource, UserList, OrderList, OrderResource, OrderItemList, \
     OrderItemResource, ProductList, ProductResource, VendorList, VendorResource, UnitList, UnitResource, \
@@ -11,8 +11,22 @@ from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchem
 from inventory_api_app.extensions import apispec
 from flask_cors import CORS
 
+
+class CustomApi(Api):
+    """Custom Api class to handle JWT exceptions"""
+
+    def handle_error(self, e):
+        """Override handle_error to catch JWT exceptions"""
+        if isinstance(e, ExpiredSignatureError):
+            return jsonify({"msg": "Token has expired"}), 401
+        elif isinstance(e, (DecodeError, InvalidTokenError)):
+            return jsonify({"msg": "Invalid token"}), 401
+        # Fall back to default error handling
+        return super().handle_error(e)
+
+
 blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
-api = Api(blueprint)
+api = CustomApi(blueprint)
 CORS(blueprint)
 
 
@@ -35,33 +49,33 @@ api.add_resource(OrderResource, '/order/<int:order_id>')
 api.add_resource(OrderList, '/order')
 
 
-@blueprint.before_app_first_request
-def register_views():
-    apispec.spec.components.schema("UserSchema", schema=UserSchema)
-    apispec.spec.path(view=UserResource, app=current_app)
-    apispec.spec.path(view=UserList, app=current_app)
-    apispec.spec.components.schema("InventorySchema", schema=InventorySchema)
-    apispec.spec.path(view=InventoryResource, app=current_app)
-    apispec.spec.path(view=InventoryList, app=current_app)
-    apispec.spec.components.schema("UnitSchema", schema=UnitSchema)
-    apispec.spec.path(view=UnitResource, app=current_app)
-    apispec.spec.path(view=UnitList, app=current_app)
-    apispec.spec.components.schema("CategorySchema", schema=CategorySchema)
-    apispec.spec.path(view=CategoryResource, app=current_app)
-    apispec.spec.path(view=CategoryList, app=current_app)
-    apispec.spec.components.schema("VendorSchema", schema=VendorSchema)
-    apispec.spec.path(view=VendorResource, app=current_app)
-    apispec.spec.path(view=VendorList, app=current_app)
-    apispec.spec.components.schema("ProductSchema", schema=ProductSchema)
-    apispec.spec.path(view=ProductResource, app=current_app)
-    apispec.spec.path(view=ProductList, app=current_app)
-    apispec.spec.path(view=ProductHistoryResource, app=current_app)
-    apispec.spec.components.schema("OrderSchema", schema=OrderSchema)
-    apispec.spec.path(view=OrderResource, app=current_app)
-    apispec.spec.path(view=OrderList, app=current_app)
-    apispec.spec.components.schema("OrderItemSchema", schema=OrderItemSchema)
-    apispec.spec.path(view=OrderItemResource, app=current_app)
-    apispec.spec.path(view=OrderItemList, app=current_app)
+def register_apispec_views(app):
+    with app.app_context():
+        apispec.spec.components.schema("UserSchema", schema=UserSchema)
+        apispec.spec.path(view=UserResource, app=app)
+        apispec.spec.path(view=UserList, app=app)
+        apispec.spec.components.schema("InventorySchema", schema=InventorySchema)
+        apispec.spec.path(view=InventoryResource, app=app)
+        apispec.spec.path(view=InventoryList, app=app)
+        apispec.spec.components.schema("UnitSchema", schema=UnitSchema)
+        apispec.spec.path(view=UnitResource, app=app)
+        apispec.spec.path(view=UnitList, app=app)
+        apispec.spec.components.schema("CategorySchema", schema=CategorySchema)
+        apispec.spec.path(view=CategoryResource, app=app)
+        apispec.spec.path(view=CategoryList, app=app)
+        apispec.spec.components.schema("VendorSchema", schema=VendorSchema)
+        apispec.spec.path(view=VendorResource, app=app)
+        apispec.spec.path(view=VendorList, app=app)
+        apispec.spec.components.schema("ProductSchema", schema=ProductSchema)
+        apispec.spec.path(view=ProductResource, app=app)
+        apispec.spec.path(view=ProductList, app=app)
+        apispec.spec.path(view=ProductHistoryResource, app=app)
+        apispec.spec.components.schema("OrderSchema", schema=OrderSchema)
+        apispec.spec.path(view=OrderResource, app=app)
+        apispec.spec.path(view=OrderList, app=app)
+        apispec.spec.components.schema("OrderItemSchema", schema=OrderItemSchema)
+        apispec.spec.path(view=OrderItemResource, app=app)
+        apispec.spec.path(view=OrderItemList, app=app)
 
 
 @blueprint.errorhandler(ValidationError)

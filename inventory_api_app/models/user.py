@@ -12,7 +12,7 @@ class User(db.Model):
     active = db.Column(db.Boolean, default=True)
 
     def __init__(self, **kwargs):
-        super(User, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.password = pwd_context.hash(self.password)
 
     def __repr__(self):

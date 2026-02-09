@@ -10,6 +10,7 @@ from tests.factories import UserFactory
 
 register(UserFactory)
 
+
 @pytest.fixture
 def app():
     app = create_app(testing=True)
@@ -18,15 +19,11 @@ def app():
 
 @pytest.fixture
 def db(app):
-    _db.app = app
-
     with app.app_context():
         _db.create_all()
-
-    yield _db
-
-    _db.session.close()
-    _db.drop_all()
+        yield _db
+        _db.session.close()
+        _db.drop_all()
 
 
 @pytest.fixture
@@ -58,7 +55,7 @@ def admin_headers(admin_user, client):
     tokens = json.loads(rep.get_data(as_text=True))
     return {
         'content-type': 'application/json',
-        'authorization': 'Bearer %s' % tokens['access_token']
+        'authorization': f'Bearer {tokens["access_token"]}'
     }
 
 
@@ -77,5 +74,5 @@ def admin_refresh_headers(admin_user, client):
     tokens = json.loads(rep.get_data(as_text=True))
     return {
         'content-type': 'application/json',
-        'authorization': 'Bearer %s' % tokens['refresh_token']
+        'authorization': f'Bearer {tokens["refresh_token"]}'
     }

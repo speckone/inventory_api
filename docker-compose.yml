@@ -1,35 +1,33 @@
 # WARNING: this file is not suitable for production, please use with caution
-version: '3'
-
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=inventory_user
+      - POSTGRES_PASSWORD=LRx9*X9uqCK!
+      - POSTGRES_DB=inventory_api
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory_user -d inventory_api"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   web:
     image: inventory_api_app
     build: .
     command: gunicorn -b 0.0.0.0:5000 inventory_api_app.wsgi:app
-    env_file:
-      - ./.flaskenv
     environment:
-      - DATABASE_URI=sqlite:////db/inventory_api_app.db
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq
-      - CELERY_RESULT_BACKEND_URL=redis://redis
+      - DATABASE_URI=postgresql://inventory_user:LRx9*X9uqCK!@db:5432/inventory_api
+      - SECRET_KEY=changeme
+      - FLASK_DEBUG=0
     volumes:
       - ./inventory_api_app:/code/inventory_api_app
-      - ./db/:/db/
     ports:
-      - "5000:5000"
-  rabbitmq:
-    image: rabbitmq
-  redis:
-    image: redis
-  celery:
-    image: inventory_api_app
-    command: "celery worker -A inventory_api_app.celery_app:app"
-    env_file:
-      - ./.flaskenv
-    volumes:
-      - .:/code
+      - "5001:5000"
     depends_on:
-      - rabbitmq
-    environment:
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq
-      - CELERY_RESULT_BACKEND_URL=redis://redis
+      db:
+        condition: service_healthy

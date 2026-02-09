@@ -77,7 +77,7 @@ class InventoryResource(Resource):
         404:
           description: inventory does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, inventory_id):
         schema = InventorySchema()
@@ -136,7 +136,7 @@ class InventoryList(Resource):
                     example: inventory created
                   inventory: InventorySchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = InventorySchema(many=True)
@@ -221,7 +221,7 @@ class ProductResource(Resource):
         404:
           description: product does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, product_id):
         schema = ProductSchema()
@@ -239,6 +239,11 @@ class ProductResource(Resource):
 
     def delete(self, product_id):
         product = Product.query.get_or_404(product_id)
+
+        # Check if product has any order items (historical orders)
+        if product.order_items:
+            return {"msg": "Cannot delete product that has been ordered. Delete order items first."}, 400
+
         db.session.delete(product)
         db.session.commit()
 
@@ -280,7 +285,7 @@ class ProductList(Resource):
                     example: product created
                   product: ProductSchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = ProductSchema(many=True)
@@ -322,7 +327,7 @@ class ProductHistoryResource(Resource):
         404:
           description: product does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, product_id):
         schema = OrderSchema(many=True)
@@ -400,7 +405,7 @@ class UnitResource(Resource):
         404:
           description: unit does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, unit_id):
         schema = UnitSchema()
@@ -460,7 +465,7 @@ class UnitList(Resource):
                     example: unit created
                   unit: UnitSchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = UnitSchema(many=True)
@@ -546,7 +551,7 @@ class CategoryResource(Resource):
         404:
           description: category does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, category_id):
         schema = CategorySchema()
@@ -606,7 +611,7 @@ class CategoryList(Resource):
                     example: category created
                   category: CategorySchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = CategorySchema(many=True)
@@ -691,7 +696,7 @@ class VendorResource(Resource):
         404:
           description: vendor does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, vendor_id):
         schema = VendorSchema()
@@ -750,7 +755,7 @@ class VendorList(Resource):
                     example: vendor created
                   vendor: VendorSchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = VendorSchema(many=True)
@@ -835,7 +840,7 @@ class OrderResource(Resource):
         404:
           description: order does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, order_id):
         schema = OrderSchema()
@@ -929,7 +934,7 @@ class OrderList(Resource):
                     example: order created
                   order: OrderSchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = OrderSchema(many=True)
@@ -1038,7 +1043,7 @@ class OrderItemResource(Resource):
         404:
           description: order_item does not exists
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self, order_item_id):
         schema = OrderItemSchema()
@@ -1097,7 +1102,7 @@ class OrderItemList(Resource):
                     example: order_item created
                   order_item: OrderItemSchema
     """
-    method_decorators = [jwt_required]
+    method_decorators = [jwt_required()]
 
     def get(self):
         schema = OrderItemSchema(many=True)

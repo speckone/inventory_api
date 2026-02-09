@@ -1,6 +1,6 @@
-.PHONY: init init-migration build run db-migrate test tox
+.PHONY: init build run db-migrate db-upgrade test tox lint
 
-init:  build run
+init: build run
 	docker-compose exec web inventory_api_app db upgrade
 	docker-compose exec web inventory_api_app init
 	@echo "Init done, containers running"
@@ -18,16 +18,10 @@ db-upgrade:
 	docker-compose exec web inventory_api_app db upgrade
 
 test:
-	docker-compose stop celery # stop celery to avoid conflicts with celery tests
-	docker-compose start rabbitmq redis # ensuring both redis and rabbitmq are started
 	docker-compose run -v $(PWD)/tests:/code/tests:ro web tox -e test
-	docker-compose start celery
 
 tox:
-	docker-compose stop celery # stop celery to avoid conflicts with celery tests
-	docker-compose start rabbitmq redis # ensuring both redis and rabbitmq are started
-	docker-compose run -v $(PWD)/tests:/code/tests:ro web tox -e py37
-	docker-compose start celery
+	docker-compose run -v $(PWD)/tests:/code/tests:ro web tox -e py312
 
 lint:
 	docker-compose run web tox -e lint

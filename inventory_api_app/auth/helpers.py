@@ -1,9 +1,5 @@
-"""Various helpers for auth. Mainly about tokens blacklisting
-
-heavily inspired by
-https://github.com/vimalloc/flask-jwt-extended/blob/master/examples/database_blacklist/blacklist_helpers.py
-"""
-from datetime import datetime
+"""Various helpers for auth. Mainly about token blocklisting."""
+from datetime import datetime, timezone
 
 from flask_jwt_extended import decode_token
 from sqlalchemy.orm.exc import NoResultFound
@@ -12,17 +8,13 @@ from inventory_api_app.extensions import db
 from inventory_api_app.models import TokenBlacklist
 
 
-def add_token_to_database(encoded_token, identity_claim):
-    """
-    Adds a new token to the database. It is not revoked when it is added.
-
-    :param identity_claim: configured key to get user identity
-    """
+def add_token_to_database(encoded_token):
+    """Adds a new token to the database. It is not revoked when it is added."""
     decoded_token = decode_token(encoded_token)
     jti = decoded_token["jti"]
     token_type = decoded_token["type"]
-    user_identity = decoded_token[identity_claim]
-    expires = datetime.fromtimestamp(decoded_token["exp"])
+    user_identity = int(decoded_token["sub"])
+    expires = datetime.fromtimestamp(decoded_token["exp"], tz=timezone.utc)
     revoked = False
 
     db_token = TokenBlacklist(
@@ -58,8 +50,8 @@ def revoke_token(token_jti, user):
     if token is not found we raise an exception
     """
     try:
-        token = TokenBlacklist.query.filter_by(jti=token_jti, user_id=user).one()
+        token = TokenBlacklist.query.filter_by(jti=token_jti, user_id=int(user)).one()
         token.revoked = True
         db.session.commit()
     except NoResultFound:
-        raise Exception("Could not find the token {}".format(token_jti))
+        raise Exception(f"Could not find the token {token_jti}")

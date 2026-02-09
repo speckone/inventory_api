@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
 """Database module, including the SQLAlchemy database object and DB-related utilities."""
-from .compat import basestring
 from .extensions import db
 
 # Alias common SQLAlchemy names
@@ -42,8 +40,6 @@ class Model(CRUDMixin, db.Model):
     __abstract__ = True
 
 
-# From Mike Bayer's "Building the app" talk
-# https://speakerdeck.com/zzzeek/building-the-app
 class SurrogatePK(object):
     """A mixin that adds a surrogate integer 'primary key' column named ``id`` to any declarative-mapped class."""
 
@@ -55,10 +51,10 @@ class SurrogatePK(object):
     def get_by_id(cls, record_id):
         """Get record by ID."""
         if any(
-                (isinstance(record_id, basestring) and record_id.isdigit(),
+                (isinstance(record_id, (str, bytes)) and record_id.isdigit(),
                  isinstance(record_id, (int, float))),
         ):
-            return cls.query.get(int(record_id))
+            return db.session.get(cls, int(record_id))
         return None
 
 
@@ -71,5 +67,5 @@ def reference_col(tablename, nullable=False, pk_name='id', **kwargs):
         category = relationship('Category', backref='categories')
     """
     return db.Column(
-        db.ForeignKey('{0}.{1}'.format(tablename, pk_name)),
+        db.ForeignKey(f'{tablename}.{pk_name}'),
         nullable=nullable, **kwargs)

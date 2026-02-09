@@ -10,7 +10,7 @@ class Inventory(SurrogatePK, Model):
     capacity = Column(db.Float, nullable=False)
     product_id = reference_col('product', unique=True)
     reorder_level = Column(db.Float, nullable=False)
-    product = relationship('Product', backref='inventory_item')
+    product = relationship('Product', backref=db.backref('inventory_item', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return self.product.name

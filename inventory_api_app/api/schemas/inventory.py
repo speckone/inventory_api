@@ -1,7 +1,6 @@
 from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, OrderItem, OrderStatus, Category
 from inventory_api_app.extensions import ma, db
 from marshmallow import fields
-from marshmallow_enum import EnumField
 
 
 class InventorySchema(ma.SQLAlchemyAutoSchema):
@@ -44,7 +43,7 @@ class VendorSchema(ma.SQLAlchemyAutoSchema):
 
 
 class OrderSchema(ma.SQLAlchemyAutoSchema):
-    status = EnumField(OrderStatus, by_value=True)
+    status = fields.Enum(OrderStatus, by_value=True)
     cost = fields.Float(dump_only=True)
 
     class Meta:

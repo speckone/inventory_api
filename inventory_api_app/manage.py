@@ -4,7 +4,7 @@ from flask.cli import FlaskGroup, with_appcontext
 from inventory_api_app.app import create_app
 
 
-def create_inventory_api_app(info):
+def create_inventory_api_app():
     return create_app(cli=True)
 
 

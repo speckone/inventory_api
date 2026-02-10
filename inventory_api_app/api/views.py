@@ -5,9 +5,10 @@ from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
 
 from inventory_api_app.api.resources import UserResource, UserList, OrderList, OrderResource, OrderItemList, \
     OrderItemResource, ProductList, ProductResource, VendorList, VendorResource, UnitList, UnitResource, \
-    InventoryList, InventoryResource, CategoryList, CategoryResource, ProductHistoryResource
+    InventoryList, InventoryResource, CategoryList, CategoryResource, ProductHistoryResource, \
+    CustomerResource, CustomerList, InvoiceResource, InvoiceList, InvoiceItemResource, InvoiceItemList
 from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchema, VendorSchema, ProductSchema, \
-    OrderSchema, OrderItemSchema, CategorySchema
+    OrderSchema, OrderItemSchema, CategorySchema, CustomerSchema, InvoiceSchema, InvoiceItemSchema
 from inventory_api_app.extensions import apispec
 from flask_cors import CORS
 
@@ -47,6 +48,12 @@ api.add_resource(OrderItemResource, '/orderitem/<int:order_item_id>')
 api.add_resource(OrderItemList, '/orderitem')
 api.add_resource(OrderResource, '/order/<int:order_id>')
 api.add_resource(OrderList, '/order')
+api.add_resource(CustomerResource, '/customer/<int:customer_id>')
+api.add_resource(CustomerList, '/customer')
+api.add_resource(InvoiceResource, '/invoice/<int:invoice_id>')
+api.add_resource(InvoiceList, '/invoice')
+api.add_resource(InvoiceItemResource, '/invoiceitem/<int:invoice_item_id>')
+api.add_resource(InvoiceItemList, '/invoiceitem')
 
 
 def register_apispec_views(app):
@@ -76,6 +83,15 @@ def register_apispec_views(app):
         apispec.spec.components.schema("OrderItemSchema", schema=OrderItemSchema)
         apispec.spec.path(view=OrderItemResource, app=app)
         apispec.spec.path(view=OrderItemList, app=app)
+        apispec.spec.components.schema("CustomerSchema", schema=CustomerSchema)
+        apispec.spec.path(view=CustomerResource, app=app)
+        apispec.spec.path(view=CustomerList, app=app)
+        apispec.spec.components.schema("InvoiceSchema", schema=InvoiceSchema)
+        apispec.spec.path(view=InvoiceResource, app=app)
+        apispec.spec.path(view=InvoiceList, app=app)
+        apispec.spec.components.schema("InvoiceItemSchema", schema=InvoiceItemSchema)
+        apispec.spec.path(view=InvoiceItemResource, app=app)
+        apispec.spec.path(view=InvoiceItemList, app=app)
 
 
 @blueprint.errorhandler(ValidationError)

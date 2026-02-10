@@ -4,7 +4,7 @@ services:
     image: postgres:16-alpine
     environment:
       - POSTGRES_USER=inventory_user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PASSWORD=LRx9*X9uqCK!
       - POSTGRES_DB=inventory_api
     volumes:
       - ./pgdata:/var/lib/postgresql/data
@@ -21,7 +21,7 @@ services:
     build: .
     command: gunicorn -b 0.0.0.0:5000 inventory_api_app.wsgi:app
     environment:
-      - DATABASE_URI=postgresql://inventory_user:password@db:5432/inventory_api
+      - DATABASE_URI=postgresql://inventory_user:LRx9*X9uqCK!@db:5432/inventory_api
       - SECRET_KEY=changeme
       - FLASK_DEBUG=0
     volumes:

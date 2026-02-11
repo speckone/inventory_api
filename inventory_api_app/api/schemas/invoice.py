@@ -4,6 +4,10 @@ from marshmallow import fields
 
 
 class CustomerSchema(ma.SQLAlchemyAutoSchema):
+    invoices = fields.List(
+        fields.Nested("InvoiceSchema", dump_only=True, exclude=("customer",))
+    )
+
     class Meta:
         model = Customer
         load_instance = True
@@ -12,7 +16,9 @@ class CustomerSchema(ma.SQLAlchemyAutoSchema):
 
 class InvoiceSchema(ma.SQLAlchemyAutoSchema):
     subtotal = fields.Float(dump_only=True)
-    balance = fields.Float(dump_only=True)
+    customer = fields.Nested(
+        CustomerSchema, dump_only=True, exclude=("invoices",)
+    )
 
     class Meta:
         model = Invoice

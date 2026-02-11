@@ -22,6 +22,8 @@ class ProductSchema(ma.SQLAlchemyAutoSchema):
 
 
 class UnitSchema(ma.SQLAlchemyAutoSchema):
+    products = fields.List(fields.Nested("ProductSchema", dump_only=True))
+
     class Meta:
         model = Unit
         load_instance = True
@@ -29,6 +31,8 @@ class UnitSchema(ma.SQLAlchemyAutoSchema):
 
 
 class CategorySchema(ma.SQLAlchemyAutoSchema):
+    products = fields.List(fields.Nested("ProductSchema", dump_only=True))
+
     class Meta:
         model = Category
         load_instance = True
@@ -36,6 +40,8 @@ class CategorySchema(ma.SQLAlchemyAutoSchema):
 
 
 class VendorSchema(ma.SQLAlchemyAutoSchema):
+    products = fields.List(fields.Nested("ProductSchema", dump_only=True))
+
     class Meta:
         model = Vendor
         load_instance = True
@@ -45,6 +51,7 @@ class VendorSchema(ma.SQLAlchemyAutoSchema):
 class OrderSchema(ma.SQLAlchemyAutoSchema):
     status = fields.Enum(OrderStatus, by_value=True)
     cost = fields.Float(dump_only=True)
+    order_items = fields.List(fields.Nested("OrderItemSchema", dump_only=True))
 
     class Meta:
         model = Order

@@ -21,6 +21,7 @@ class Invoice(SurrogatePK, Model):
     __tablename__ = 'invoice'
     invoice_number = Column(db.Integer, unique=True, nullable=False)
     date = Column(db.DateTime)
+    paid = Column(db.Boolean, default=False, nullable=False)
     customer_id = reference_col('customer')
     customer = relationship('Customer', backref='invoices')
 
@@ -35,10 +36,6 @@ class Invoice(SurrogatePK, Model):
         for item in self.invoice_items:
             total += item.price_per_unit * item.quantity
         return total
-
-    @property
-    def balance(self):
-        return self.subtotal
 
     def __repr__(self):
         return f'Invoice #{self.invoice_number}'

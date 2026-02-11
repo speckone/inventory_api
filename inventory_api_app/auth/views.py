@@ -71,7 +71,16 @@ def login():
     add_token_to_database(access_token)
     add_token_to_database(refresh_token)
 
-    ret = {"access_token": access_token, "refresh_token": refresh_token}
+    ret = {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "name": user.name,
+            "role": user.role,
+        },
+    }
     return jsonify(ret), 200
 
 
@@ -105,9 +114,19 @@ def refresh():
           description: unauthorized
     """
     current_user = get_jwt_identity()
+    user = db.session.get(User, int(current_user))
     access_token = create_access_token(identity=current_user)
-    ret = {"access_token": access_token}
     add_token_to_database(access_token)
+
+    ret = {
+        "access_token": access_token,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "name": user.name,
+            "role": user.role,
+        },
+    }
     return jsonify(ret), 200
 
 

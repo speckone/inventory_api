@@ -1,3 +1,5 @@
+from sqlalchemy import event
+
 from inventory_api_app.extensions import db, pwd_context
 
 
@@ -13,9 +15,12 @@ class User(db.Model):
     role = db.Column(db.String(50), nullable=False, default="user")
     active = db.Column(db.Boolean, default=True)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.password = pwd_context.hash(self.password)
-
     def __repr__(self):
         return "<User %s>" % self.username
+
+
+@event.listens_for(User.password, "set", retval=True)
+def hash_user_password(target, value, oldvalue, initiator):
+    if value and not value.startswith("$pbkdf2-sha256$"):
+        return pwd_context.hash(value)
+    return value

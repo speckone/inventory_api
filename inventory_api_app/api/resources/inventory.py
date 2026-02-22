@@ -1,10 +1,28 @@
 from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
-from inventory_api_app.models import Inventory, Product, Unit, Vendor, Order, OrderItem, OrderStatus, Category
-from inventory_api_app.api.schemas import InventorySchema, VendorSchema, UnitSchema, ProductSchema, OrderSchema, \
-    OrderItemSchema, CategorySchema
-from inventory_api_app.extensions import ma, db
+from sqlalchemy.orm import joinedload
+from inventory_api_app.models import (
+    Inventory,
+    Product,
+    Unit,
+    Vendor,
+    Order,
+    OrderItem,
+    OrderStatus,
+    Category,
+)
+from inventory_api_app.api.schemas import (
+    InventorySchema,
+    VendorSchema,
+    UnitSchema,
+    ProductSchema,
+    OrderSchema,
+    OrderItemSchema,
+    CategorySchema,
+)
+from inventory_api_app.commons.pagination import paginate
+from inventory_api_app.extensions import db
 import smtplib
 from email.mime.text import MIMEText
 
@@ -141,7 +159,7 @@ class InventoryList(Resource):
     def get(self):
         schema = InventorySchema(many=True)
         query = Inventory.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = InventorySchema()
@@ -290,7 +308,7 @@ class ProductList(Resource):
     def get(self):
         schema = ProductSchema(many=True)
         query = Product.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = ProductSchema()
@@ -331,9 +349,10 @@ class ProductHistoryResource(Resource):
 
     def get(self, product_id):
         schema = OrderSchema(many=True)
-        query = Order.query.join(OrderItem, Order.order_items).filter(OrderItem.product_id == product_id).filter(
-            Order.status == OrderStatus.RECEIVED)
-        return schema.dump(query.all())
+        query = Order.query.join(OrderItem, Order.order_items).filter(
+            OrderItem.product_id == product_id
+        ).filter(Order.status == OrderStatus.RECEIVED)
+        return paginate(query, schema)
 
 
 class UnitResource(Resource):
@@ -470,7 +489,7 @@ class UnitList(Resource):
     def get(self):
         schema = UnitSchema(many=True)
         query = Unit.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = UnitSchema()
@@ -616,7 +635,7 @@ class CategoryList(Resource):
     def get(self):
         schema = CategorySchema(many=True)
         query = Category.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = CategorySchema()
@@ -760,7 +779,7 @@ class VendorList(Resource):
     def get(self):
         schema = VendorSchema(many=True)
         query = Vendor.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = VendorSchema()
@@ -849,19 +868,32 @@ class OrderResource(Resource):
 
     def put(self, order_id):
         schema = OrderSchema(partial=True)
-        order_db = Order.query.get_or_404(order_id)
+        order_db = Order.query.options(
+            joinedload(Order.order_items)
+            .joinedload(OrderItem.product)
+            .joinedload(Product.vendor),
+            joinedload(Order.order_items)
+            .joinedload(OrderItem.product)
+            .joinedload(Product.unit),
+            joinedload(Order.order_items)
+            .joinedload(OrderItem.product)
+            .joinedload(Product.inventory_item),
+        ).get_or_404(order_id)
         order = schema.load(request.json, instance=order_db, session=db.session)
         db.session.commit()
 
         def send_email(subject, body, sender, recipients, password, smtp_host):
-            current_app.logger.debug(subject, body, sender, recipients, password, smtp_host)
+            current_app.logger.debug("Sending email: subject=%s, to=%s", subject, recipients)
             msg = MIMEText(body)
-            msg['Subject'] = subject
-            msg['From'] = sender
-            msg['To'] = ', '.join(recipients)
-            with smtplib.SMTP_SSL(smtp_host, 465) as smtp_server:
-                smtp_server.login(sender, password)
-                smtp_server.sendmail(sender, recipients, msg.as_string())
+            msg["Subject"] = subject
+            msg["From"] = sender
+            msg["To"] = ", ".join(recipients)
+            try:
+                with smtplib.SMTP_SSL(smtp_host, 465) as smtp_server:
+                    smtp_server.login(sender, password)
+                    smtp_server.sendmail(sender, recipients, msg.as_string())
+            except smtplib.SMTPException:
+                current_app.logger.exception("Failed to send email: subject=%s", subject)
 
         # Compose SMS on order submit
         if request.json['status'] == OrderStatus.SUBMITTED.value:
@@ -874,18 +906,20 @@ class OrderResource(Resource):
                     vendor = order_item.product.vendor
                 inventory = order_item.product.inventory_item[0]
                 order_info.append(
-                    f"{order_item.quantity} {order_item.product.unit.name}s of {order_item.product.name}({inventory.quantity})")
+                    f"{order_item.quantity} {order_item.product.unit.name}s"
+                    f" of {order_item.product.name}({inventory.quantity})"
+                )
             order_info.append(f"Total cost: {order_db.cost:.2f}")
-            send_email(subject="New inventory order", body="\n".join(order_info), sender=config["FROM_EMAIL"],
-                       recipients=[config["TO_EMAIL"], ], password=config["EMAIL_PASS"], smtp_host=config["EMAIL_HOST"])
+            send_email(
+                subject="New inventory order",
+                body="\n".join(order_info),
+                sender=config["FROM_EMAIL"],
+                recipients=[config["TO_EMAIL"]],
+                password=config["EMAIL_PASS"],
+                smtp_host=config["EMAIL_HOST"],
+            )
             order.status = OrderStatus.RECEIVED
             db.session.commit()
-        # elif request.json['status'] == OrderStatus.RECEIVED.value:
-            # for order_item in order_db.order_items:
-            #     inventory_item = Inventory.query.filter(Inventory.product_id == order_item.product_id).one()
-            #     inventory_item.quantity += order_item.quantity
-            #     inventory_item.save()
-            #     db.session.commit()
         return {"msg": "order updated", "order": schema.dump(order)}
 
     def delete(self, order_id):
@@ -938,38 +972,45 @@ class OrderList(Resource):
 
     def get(self):
         schema = OrderSchema(many=True)
-        if len(request.args) > 0:
-            if request.args['status']:
-                request_status = OrderStatus(request.args['status'])
-                query = Order.query.filter(Order.status == request_status)
-                print(query)
-            else:
-                query = Order.query
+        status_arg = request.args.get("status")
+        if status_arg:
+            request_status = OrderStatus(status_arg)
+            query = Order.query.filter(Order.status == request_status)
         else:
-            query = Order.query.filter(Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED)))
+            query = Order.query.filter(
+                Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED))
+            )
 
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = OrderSchema()
         order_request = dict()
         # Cancel open orders before creating new order
-        open_orders = Order.query.filter(Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED)))
+        open_orders = Order.query.filter(
+            Order.status.in_((OrderStatus.NEW, OrderStatus.SUBMITTED))
+        )
         for order in open_orders:
             order.status = OrderStatus.RECEIVED
-            order.save()
         if request.json:
             order_request = request.json
         order = schema.load(order_request, session=db.session)
 
         db.session.add(order)
-        inventory = Inventory.query.all()
+        db.session.flush()  # Flush to get order.id without committing
+
+        inventory = Inventory.query.options(
+            joinedload(Inventory.product),
+        ).all()
         for item in inventory:
             if item.running_low:
-                order_item = OrderItem(quantity=item.needed_at_store,
-                                       order_id=order.id,
-                                       product_id=item.product.id)
-                order_item.save()
+                order_item = OrderItem(
+                    quantity=item.needed_at_store,
+                    order_id=order.id,
+                    product_id=item.product.id,
+                )
+                db.session.add(order_item)
+
         db.session.commit()
 
         return {"msg": "order created", "order": schema.dump(order)}, 201
@@ -1107,7 +1148,7 @@ class OrderItemList(Resource):
     def get(self):
         schema = OrderItemSchema(many=True)
         query = OrderItem.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = OrderItemSchema()

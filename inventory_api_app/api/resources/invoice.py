@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required
 from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem
 from inventory_api_app.api.schemas.invoice import CustomerSchema, InvoiceSchema, InvoiceItemSchema
 from inventory_api_app.extensions import db
+from inventory_api_app.commons.pagination import paginate
 
 
 class CustomerResource(Resource):
@@ -138,7 +139,7 @@ class CustomerList(Resource):
     def get(self):
         schema = CustomerSchema(many=True)
         query = Customer.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = CustomerSchema()
@@ -284,7 +285,7 @@ class InvoiceList(Resource):
     def get(self):
         schema = InvoiceSchema(many=True)
         query = Invoice.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = InvoiceSchema()
@@ -428,7 +429,7 @@ class InvoiceItemList(Resource):
     def get(self):
         schema = InvoiceItemSchema(many=True)
         query = InvoiceItem.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = InvoiceItemSchema()

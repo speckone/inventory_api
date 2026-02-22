@@ -1,9 +1,10 @@
 from flask import request
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required
 from inventory_api_app.api.schemas import UserSchema
 from inventory_api_app.models import User
 from inventory_api_app.extensions import db
+from inventory_api_app.commons.pagination import paginate
+from inventory_api_app.auth.decorators import admin_required, owner_or_admin
 
 
 class UserResource(Resource):
@@ -76,7 +77,11 @@ class UserResource(Resource):
           description: user does not exists
     """
 
-    method_decorators = [jwt_required()]
+    method_decorators = {
+        "get": [owner_or_admin()],
+        "put": [owner_or_admin()],
+        "delete": [admin_required()],
+    }
 
     def get(self, user_id):
         schema = UserSchema()
@@ -137,12 +142,12 @@ class UserList(Resource):
                   user: UserSchema
     """
 
-    method_decorators = [jwt_required()]
+    method_decorators = [admin_required()]
 
     def get(self):
         schema = UserSchema(many=True)
         query = User.query
-        return schema.dump(query.all())
+        return paginate(query, schema)
 
     def post(self):
         schema = UserSchema()

@@ -1,32 +1,32 @@
-"""Simple helper to paginate query
-"""
-from flask import url_for, request
+"""Simple helper to paginate query"""
+import math
 
-DEFAULT_PAGE_SIZE = 50
+from flask import request
+
+DEFAULT_PAGE_SIZE = 25
 DEFAULT_PAGE_NUMBER = 1
 
 
 def paginate(query, schema):
-    page = request.args.get("page", DEFAULT_PAGE_NUMBER)
-    per_page = request.args.get("page_size", DEFAULT_PAGE_SIZE)
-    page_obj = query.paginate(page=page, per_page=per_page)
-    next_ = url_for(
-        request.endpoint,
-        page=page_obj.next_num if page_obj.has_next else page_obj.page,
-        per_page=per_page,
-        **request.view_args
-    )
-    prev = url_for(
-        request.endpoint,
-        page=page_obj.prev_num if page_obj.has_prev else page_obj.page,
-        per_page=per_page,
-        **request.view_args
-    )
+    """Paginate a SQLAlchemy query and serialize results with the given schema.
+
+    Reads ``page`` and ``per_page`` from ``request.args`` (defaults: 1 / 25).
+    Returns a dict with ``results``, ``total``, ``page`` and ``pages``.
+    """
+    page = request.args.get("page", DEFAULT_PAGE_NUMBER, type=int)
+    per_page = request.args.get("per_page", DEFAULT_PAGE_SIZE, type=int)
+
+    # Clamp to sane boundaries
+    page = max(1, page)
+    per_page = max(1, min(per_page, 10000))
+
+    page_obj = query.paginate(page=page, per_page=per_page, error_out=False)
+    total = page_obj.total
+    pages = math.ceil(total / per_page) if per_page else 0
 
     return {
-        "total": page_obj.total,
-        "pages": page_obj.pages,
-        "next": next_,
-        "prev": prev,
         "results": schema.dump(page_obj.items),
+        "total": total,
+        "page": page,
+        "pages": pages,
     }

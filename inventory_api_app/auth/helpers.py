@@ -1,6 +1,7 @@
 """Various helpers for auth. Mainly about token blocklisting."""
 from datetime import datetime, timezone
 
+from flask import current_app
 from flask_jwt_extended import decode_token
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -54,4 +55,5 @@ def revoke_token(token_jti, user):
         token.revoked = True
         db.session.commit()
     except NoResultFound:
-        raise Exception(f"Could not find the token {token_jti}")
+        current_app.logger.warning("Could not find the token %s", token_jti)
+        return True

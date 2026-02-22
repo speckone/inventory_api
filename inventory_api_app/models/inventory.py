@@ -8,7 +8,7 @@ class Inventory(SurrogatePK, Model):
     __tablename__ = 'inventory'
     quantity = Column(db.Float, nullable=False)
     capacity = Column(db.Float, nullable=False)
-    product_id = reference_col('product', unique=True)
+    product_id = reference_col('product', unique=True, index=True)
     reorder_level = Column(db.Float, nullable=False)
     product = relationship('Product', backref=db.backref('inventory_item', cascade='all, delete-orphan'))
 
@@ -38,11 +38,11 @@ class Product(SurrogatePK, Model):
     __tablename__ = 'product'
     name = Column(db.String, unique=True, nullable=False)
     unit_price = Column(db.Float, nullable=False)
-    unit_id = reference_col('unit')
+    unit_id = reference_col('unit', index=True)
     unit = relationship('Unit', backref='products')
-    category_id = reference_col('category')
+    category_id = reference_col('category', index=True)
     category = relationship('Category', backref='products')
-    vendor_id = reference_col('vendor')
+    vendor_id = reference_col('vendor', index=True)
     vendor = relationship('Vendor', backref='products')
 
     def __repr__(self):
@@ -103,9 +103,9 @@ class Order(SurrogatePK, Model):
 class OrderItem(SurrogatePK, Model):
     __tablename__ = 'order_item'
     quantity = Column(db.Float)
-    order_id = reference_col('order')
+    order_id = reference_col('order', index=True)
     order = relationship('Order', backref='order_items')
-    product_id = reference_col('product')
+    product_id = reference_col('product', index=True)
     product = relationship('Product', backref='order_items')
 
 

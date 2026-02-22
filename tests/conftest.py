@@ -1,11 +1,11 @@
 import json
-import pytest
+import pytest  # type: ignore[unresolved-import]
 
-from inventory_api_app.models import User
-from inventory_api_app.app import create_app
-from inventory_api_app.extensions import db as _db
-from pytest_factoryboy import register
-from tests.factories import UserFactory
+from inventory_api_app.models import User  # type: ignore[unresolved-import]
+from inventory_api_app.app import create_app  # type: ignore[unresolved-import]
+from inventory_api_app.extensions import db as _db  # type: ignore[unresolved-import]
+from pytest_factoryboy import register  # type: ignore[unresolved-import]
+from tests.factories import UserFactory  # type: ignore[unresolved-import]
 
 
 register(UserFactory)
@@ -31,7 +31,8 @@ def admin_user(db):
     user = User(
         username='admin',
         email='admin@admin.com',
-        password='admin'
+        password='admin',
+        role='admin'
     )
 
     db.session.add(user)
@@ -75,4 +76,38 @@ def admin_refresh_headers(admin_user, client):
     return {
         'content-type': 'application/json',
         'authorization': f'Bearer {tokens["refresh_token"]}'
+    }
+
+
+@pytest.fixture
+def regular_user(db):
+    user = User(
+        username='regular',
+        email='regular@mail.com',
+        password='regular',
+        role='user'
+    )
+
+    db.session.add(user)
+    db.session.commit()
+
+    return user
+
+
+@pytest.fixture
+def regular_headers(regular_user, client):
+    data = {
+        'username': regular_user.username,
+        'password': 'regular'
+    }
+    rep = client.post(
+        '/auth/login',
+        data=json.dumps(data),
+        headers={'content-type': 'application/json'}
+    )
+
+    tokens = json.loads(rep.get_data(as_text=True))
+    return {
+        'content-type': 'application/json',
+        'authorization': f'Bearer {tokens["access_token"]}'
     }

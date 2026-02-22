@@ -13,3 +13,4 @@ apispec[yaml]>=6.8,<7
 apispec-webframeworks>=1.2,<2
 psycopg2-binary>=2.9,<3
 gunicorn>=23.0,<24
+flask-limiter>=3.5,<4

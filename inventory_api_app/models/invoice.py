@@ -22,7 +22,7 @@ class Invoice(SurrogatePK, Model):
     invoice_number = Column(db.Integer, unique=True, nullable=False)
     date = Column(db.DateTime)
     paid = Column(db.Boolean, default=False, nullable=False)
-    customer_id = reference_col('customer')
+    customer_id = reference_col('customer', index=True)
     customer = relationship('Customer', backref='invoices')
 
     def __init__(self, **kwargs):
@@ -47,7 +47,7 @@ class InvoiceItem(SurrogatePK, Model):
     description = Column(db.String, nullable=False)
     price_per_unit = Column(db.Float, nullable=False)
     quantity = Column(db.Float, nullable=False)
-    invoice_id = reference_col('invoice')
+    invoice_id = reference_col('invoice', index=True)
     invoice = relationship('Invoice', backref='invoice_items')
 
     @property

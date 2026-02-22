@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
 
 from inventory_api_app import auth, api
-from inventory_api_app.extensions import db, jwt, migrate, apispec
+from inventory_api_app.extensions import db, jwt, migrate, apispec, limiter
 
 
 def create_app(testing=False, cli=False):
@@ -26,6 +26,7 @@ def configure_extensions(app, cli):
     """Configure flask extensions"""
     db.init_app(app)
     jwt.init_app(app)
+    limiter.init_app(app)
 
     # Configure JWT error handlers
     auth.views.configure_jwt_handlers()

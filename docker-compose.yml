@@ -22,10 +22,11 @@ services:
     command: gunicorn -b 0.0.0.0:5000 inventory_api_app.wsgi:app
     environment:
       - DATABASE_URI=postgresql://inventory_user:password@db:5432/inventory_api
-      - SECRET_KEY=changeme
+      - SECRET_KEY=QLt4XLsR0RJI_Uc-ko7BU4vYh5mrmshSG6q3nxkC0FMER7Yh43_qc6Mk5Ta0S5Br
       - FLASK_DEBUG=0
     volumes:
       - ./inventory_api_app:/code/inventory_api_app
+      - ./migrations:/code/migrations
     ports:
       - "5001:5000"
     depends_on:

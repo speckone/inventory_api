@@ -1,4 +1,4 @@
-from flask import request, jsonify, Blueprint, current_app as app
+from flask import request, jsonify, Blueprint
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -7,15 +7,16 @@ from flask_jwt_extended import (
     get_jwt,
 )
 from inventory_api_app.models import User
-from inventory_api_app.extensions import db, pwd_context, jwt, apispec
+from inventory_api_app.extensions import db, pwd_context, jwt, apispec, limiter
 from inventory_api_app.auth.helpers import revoke_token, is_token_revoked, add_token_to_database
 from flask_cors import CORS
 
 blueprint = Blueprint("auth", __name__, url_prefix="/auth")
-CORS(blueprint)
+CORS(blueprint, origins=["http://localhost:5173"])
 
 
 @blueprint.route("/login", methods=["POST"])
+@limiter.limit("5/minute")
 def login():
     """Authenticate user and return tokens
 
@@ -60,11 +61,11 @@ def login():
     username = request.json.get("username", None)
     password = request.json.get("password", None)
     if not username or not password:
-        return jsonify({"msg": "Missing username or password"}), 400
+        return jsonify({"msg": "Missing username or password"}), 422
 
     user = User.query.filter_by(username=username).first()
     if user is None or not pwd_context.verify(password, user.password):
-        return jsonify({"msg": "Bad credentials"}), 400
+        return jsonify({"msg": "Bad credentials"}), 401
 
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
@@ -115,6 +116,9 @@ def refresh():
     """
     current_user = get_jwt_identity()
     user = db.session.get(User, int(current_user))
+    if user is None:
+        return jsonify({"msg": "User not found"}), 401
+
     access_token = create_access_token(identity=current_user)
     add_token_to_database(access_token)
 

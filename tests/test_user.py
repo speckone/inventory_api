@@ -1,5 +1,5 @@
-from flask import url_for
-from inventory_api_app.models import User
+from flask import url_for  # type: ignore[unresolved-import]
+from inventory_api_app.models import User  # type: ignore[unresolved-import]
 
 
 def test_get_user(client, db, user, admin_headers):
@@ -94,3 +94,51 @@ def test_get_all_user(client, db, user_factory, admin_headers):
     results = rep.get_json()
     for user in users:
         assert any(u["id"] == user.id for u in results["results"])
+
+
+# --- Authorization / RBAC tests ---
+
+
+def test_non_admin_cannot_get_user_list(client, db, regular_headers):
+    """Non-admin user should get 403 when accessing user list."""
+    users_url = url_for('api.users')
+    rep = client.get(users_url, headers=regular_headers)
+    assert rep.status_code == 403
+
+
+def test_non_admin_cannot_delete_other_user(client, db, user, regular_headers):
+    """Non-admin user should get 403 when deleting another user."""
+    db.session.add(user)
+    db.session.commit()
+
+    user_url = url_for('api.user_by_id', user_id=user.id)
+    rep = client.delete(user_url, headers=regular_headers)
+    assert rep.status_code == 403
+
+    # verify user was NOT deleted
+    assert db.session.query(User).filter_by(id=user.id).first() is not None
+
+
+def test_user_can_get_own_profile(client, db, regular_user, regular_headers):
+    """A user should be able to GET their own profile."""
+    user_url = url_for('api.user_by_id', user_id=regular_user.id)
+    rep = client.get(user_url, headers=regular_headers)
+    assert rep.status_code == 200
+
+    data = rep.get_json()["user"]
+    assert data["username"] == regular_user.username
+    assert data["email"] == regular_user.email
+
+
+def test_user_cannot_put_other_user_profile(client, db, user, regular_headers):
+    """A non-admin user should get 403 when updating another user's profile."""
+    db.session.add(user)
+    db.session.commit()
+
+    user_url = url_for('api.user_by_id', user_id=user.id)
+    rep = client.put(user_url, json={"username": "hacked"}, headers=regular_headers)
+    assert rep.status_code == 403
+
+    # verify user was NOT modified
+    unchanged = db.session.query(User).filter_by(id=user.id).first()
+    assert unchanged.username != "hacked"

@@ -1,4 +1,4 @@
-from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem
+from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem, InvoiceItemTemplate
 from inventory_api_app.extensions import ma
 from marshmallow import fields
 
@@ -34,3 +34,9 @@ class InvoiceItemSchema(ma.SQLAlchemyAutoSchema):
         model = InvoiceItem
         load_instance = True
         include_fk = True
+
+
+class InvoiceItemTemplateSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = InvoiceItemTemplate
+        load_instance = True

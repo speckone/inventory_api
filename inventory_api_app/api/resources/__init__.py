@@ -3,11 +3,11 @@ from inventory_api_app.api.resources.inventory import InventoryList, InventoryRe
     OrderItemResource, OrderList, OrderResource, ProductList, ProductResource, UnitList, UnitResource, \
     VendorList, VendorResource,CategoryList, CategoryResource, ProductHistoryResource
 from inventory_api_app.api.resources.invoice import CustomerResource, CustomerList, InvoiceResource, InvoiceList, \
-    InvoiceItemResource, InvoiceItemList
+    InvoiceItemResource, InvoiceItemList, InvoiceItemTemplateResource, InvoiceItemTemplateList
 
 
 __all__ = ["UserResource", "UserList", "InventoryList", "InventoryResource", "OrderItemList", "OrderItemResource",
            "OrderList", "OrderResource", "ProductList", "ProductResource", "UnitList", "UnitResource", "VendorList",
            "VendorResource", "CategoryList", "CategoryResource", "ProductHistoryResource",
            "CustomerResource", "CustomerList", "InvoiceResource", "InvoiceList",
-           "InvoiceItemResource", "InvoiceItemList"]
+           "InvoiceItemResource", "InvoiceItemList", "InvoiceItemTemplateResource", "InvoiceItemTemplateList"]

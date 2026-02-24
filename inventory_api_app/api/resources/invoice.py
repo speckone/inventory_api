@@ -1,8 +1,13 @@
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
-from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem
-from inventory_api_app.api.schemas.invoice import CustomerSchema, InvoiceSchema, InvoiceItemSchema
+from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem, InvoiceItemTemplate
+from inventory_api_app.api.schemas.invoice import (
+    CustomerSchema,
+    InvoiceSchema,
+    InvoiceItemSchema,
+    InvoiceItemTemplateSchema,
+)
 from inventory_api_app.extensions import db
 from inventory_api_app.commons.pagination import paginate
 
@@ -439,3 +444,165 @@ class InvoiceItemList(Resource):
         db.session.commit()
 
         return {"msg": "invoice_item created", "invoice_item": schema.dump(invoice_item)}, 201
+
+
+class InvoiceItemTemplateResource(Resource):
+    """Single object resource
+
+    ---
+    get:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: invoice_item_template_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invoice_item_template: InvoiceItemTemplateSchema
+        404:
+          description: invoice_item_template does not exists
+    put:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: invoice_item_template_id
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              InvoiceItemTemplateSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: invoice_item_template updated
+                  invoice_item_template: InvoiceItemTemplateSchema
+        404:
+          description: invoice_item_template does not exists
+    delete:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: invoice_item_template_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: invoice_item_template deleted
+        404:
+          description: invoice_item_template does not exists
+    """
+
+    method_decorators = [jwt_required()]
+
+    def get(self, invoice_item_template_id):
+        schema = InvoiceItemTemplateSchema()
+        invoice_item_template = InvoiceItemTemplate.query.get_or_404(
+            invoice_item_template_id
+        )
+        return {"invoice_item_template": schema.dump(invoice_item_template)}
+
+    def put(self, invoice_item_template_id):
+        schema = InvoiceItemTemplateSchema(partial=True)
+        invoice_item_template = InvoiceItemTemplate.query.get_or_404(
+            invoice_item_template_id
+        )
+        invoice_item_template = schema.load(
+            request.json, instance=invoice_item_template, session=db.session
+        )
+
+        db.session.commit()
+
+        return {
+            "msg": "invoice_item_template updated",
+            "invoice_item_template": schema.dump(invoice_item_template),
+        }
+
+    def delete(self, invoice_item_template_id):
+        invoice_item_template = InvoiceItemTemplate.query.get_or_404(
+            invoice_item_template_id
+        )
+        db.session.delete(invoice_item_template)
+        db.session.commit()
+
+        return {"msg": "invoice_item_template deleted"}
+
+
+class InvoiceItemTemplateList(Resource):
+    """Creation and get_all
+
+    ---
+    get:
+      tags:
+        - api
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/InvoiceItemTemplateSchema'
+    post:
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              InvoiceItemTemplateSchema
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: invoice_item_template created
+                  invoice_item_template: InvoiceItemTemplateSchema
+    """
+
+    method_decorators = [jwt_required()]
+
+    def get(self):
+        schema = InvoiceItemTemplateSchema(many=True)
+        query = InvoiceItemTemplate.query
+        return paginate(query, schema)
+
+    def post(self):
+        schema = InvoiceItemTemplateSchema()
+        invoice_item_template = schema.load(request.json, session=db.session)
+
+        db.session.add(invoice_item_template)
+        db.session.commit()
+
+        return {
+            "msg": "invoice_item_template created",
+            "invoice_item_template": schema.dump(invoice_item_template),
+        }, 201

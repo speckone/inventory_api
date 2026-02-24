@@ -56,3 +56,12 @@ class InvoiceItem(SurrogatePK, Model):
 
     def __repr__(self):
         return self.description
+
+
+class InvoiceItemTemplate(SurrogatePK, Model):
+    __tablename__ = 'invoice_item_template'
+    name = Column(db.String, unique=True, nullable=False)
+    price_per_unit = Column(db.Float)
+
+    def __repr__(self):
+        return self.name

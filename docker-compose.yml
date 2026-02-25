@@ -2,6 +2,7 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=inventory_user
       - POSTGRES_PASSWORD=password
@@ -18,6 +19,7 @@ services:
 
   web:
     image: inventory_api_app
+    restart: unless-stopped
     build: .
     command: gunicorn -b 0.0.0.0:5000 inventory_api_app.wsgi:app
     environment:

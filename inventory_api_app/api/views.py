@@ -7,10 +7,10 @@ from inventory_api_app.api.resources import UserResource, UserList, OrderList, O
     OrderItemResource, ProductList, ProductResource, VendorList, VendorResource, UnitList, UnitResource, \
     InventoryList, InventoryResource, CategoryList, CategoryResource, ProductHistoryResource, \
     CustomerResource, CustomerList, InvoiceResource, InvoiceList, InvoiceItemResource, InvoiceItemList, \
-    InvoiceItemTemplateResource, InvoiceItemTemplateList
+    InvoiceItemTemplateResource, InvoiceItemTemplateList, AppSettingResource, AppSettingList
 from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchema, VendorSchema, ProductSchema, \
     OrderSchema, OrderItemSchema, CategorySchema, CustomerSchema, InvoiceSchema, InvoiceItemSchema, \
-    InvoiceItemTemplateSchema
+    InvoiceItemTemplateSchema, AppSettingSchema
 from inventory_api_app.extensions import apispec
 from flask_cors import CORS
 
@@ -58,6 +58,8 @@ api.add_resource(InvoiceItemResource, '/invoiceitem/<int:invoice_item_id>')
 api.add_resource(InvoiceItemList, '/invoiceitem')
 api.add_resource(InvoiceItemTemplateResource, '/invoiceitemtemplate/<int:invoice_item_template_id>')
 api.add_resource(InvoiceItemTemplateList, '/invoiceitemtemplate')
+api.add_resource(AppSettingList, '/settings')
+api.add_resource(AppSettingResource, '/settings/<string:key>')
 
 
 def register_apispec_views(app):
@@ -99,6 +101,9 @@ def register_apispec_views(app):
         apispec.spec.components.schema("InvoiceItemTemplateSchema", schema=InvoiceItemTemplateSchema)
         apispec.spec.path(view=InvoiceItemTemplateResource, app=app)
         apispec.spec.path(view=InvoiceItemTemplateList, app=app)
+        apispec.spec.components.schema("AppSettingSchema", schema=AppSettingSchema)
+        apispec.spec.path(view=AppSettingList, app=app)
+        apispec.spec.path(view=AppSettingResource, app=app)
 
 
 @blueprint.errorhandler(ValidationError)

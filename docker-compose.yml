@@ -26,14 +26,6 @@ services:
       - DATABASE_URI=postgresql://inventory_user:password@db:5432/inventory_api
       - SECRET_KEY=QLt4XLsR0RJI_Uc-ko7BU4vYh5mrmshSG6q3nxkC0FMER7Yh43_qc6Mk5Ta0S5Br
       - FLASK_DEBUG=0
-      # Email configuration (uncomment and set for email notifications)
-      # - MAIL_SERVER=smtp.example.com
-      # - MAIL_PORT=465
-      # - MAIL_USE_SSL=1
-      # - MAIL_USERNAME=your-email@example.com
-      # - MAIL_PASSWORD=your-app-password
-      # - MAIL_DEFAULT_SENDER=your-email@example.com
-      # - MAIL_ORDER_RECIPIENT=recipient@example.com
     volumes:
       - ./inventory_api_app:/code/inventory_api_app
       - ./migrations:/code/migrations

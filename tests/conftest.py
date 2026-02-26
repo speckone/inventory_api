@@ -14,8 +14,6 @@ register(UserFactory)
 @pytest.fixture
 def app():
     app = create_app(testing=True)
-    app.config["MAIL_SUPPRESS_SEND"] = True
-    app.config["MAIL_ORDER_RECIPIENT"] = "test@example.com"
     return app
 
 

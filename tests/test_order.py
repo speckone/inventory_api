@@ -231,6 +231,21 @@ def test_get_order_item_list_paginated(client, db, admin_headers):
 
 def test_submit_order_sends_email(client, db, admin_headers):
     """PUT /order/<id> with status Submitted sends an order email."""
+    from inventory_api_app.models.settings import AppSetting
+
+    # Seed email settings in the database
+    for key, value in [
+        ("mail_server", "smtp.test.com"),
+        ("mail_port", "465"),
+        ("mail_use_ssl", "1"),
+        ("mail_username", "test@test.com"),
+        ("mail_password", "secret"),
+        ("mail_default_sender", "test@test.com"),
+        ("mail_order_recipient", "recipient@test.com"),
+    ]:
+        db.session.add(AppSetting(key=key, value=value))
+    db.session.flush()
+
     product = _create_product(db)
     db.session.flush()
 
@@ -249,12 +264,11 @@ def test_submit_order_sends_email(client, db, admin_headers):
     mock_thread = MagicMock()
 
     with patch("inventory_api_app.services.email.threading.Thread", return_value=mock_thread) as thread_cls:
-        with patch("inventory_api_app.services.email.mail"):
-            rep = client.put(
-                f"/api/v1/order/{order.id}",
-                json={"status": "Submitted"},
-                headers=admin_headers,
-            )
+        rep = client.put(
+            f"/api/v1/order/{order.id}",
+            json={"status": "Submitted"},
+            headers=admin_headers,
+        )
 
     assert rep.status_code == 200
     assert rep.get_json()["msg"] == "order updated"
@@ -263,10 +277,11 @@ def test_submit_order_sends_email(client, db, admin_headers):
     thread_cls.assert_called_once()
     mock_thread.start.assert_called_once()
 
-    # Extract the Message passed to send_async
+    # Verify correct args passed to send_async
     call_kwargs = thread_cls.call_args
     args = call_kwargs[1]["args"] if "args" in call_kwargs[1] else call_kwargs[0][1]
-    msg = args[1]
+    recipient = args[1]
+    subject = args[2]
 
-    assert msg.subject == "New Inventory Order"
-    assert "test@example.com" in msg.recipients
+    assert subject == "New Inventory Order"
+    assert recipient == "recipient@test.com"

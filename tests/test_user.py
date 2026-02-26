@@ -130,6 +130,17 @@ def test_user_can_get_own_profile(client, db, regular_user, regular_headers):
     assert data["email"] == regular_user.email
 
 
+def test_non_admin_cannot_put_own_profile(client, db, regular_user, regular_headers):
+    """Non-admin user should get 403 when trying to PUT their own profile."""
+    user_url = url_for('api.user_by_id', user_id=regular_user.id)
+    rep = client.put(user_url, json={"username": "hacked"}, headers=regular_headers)
+    assert rep.status_code == 403
+
+    # verify username was NOT changed
+    unchanged = db.session.query(User).filter_by(id=regular_user.id).first()
+    assert unchanged.username == "regular"
+
+
 def test_user_cannot_put_other_user_profile(client, db, user, regular_headers):
     """A non-admin user should get 403 when updating another user's profile."""
     db.session.add(user)

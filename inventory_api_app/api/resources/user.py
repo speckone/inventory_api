@@ -79,7 +79,7 @@ class UserResource(Resource):
 
     method_decorators = {
         "get": [owner_or_admin()],
-        "put": [owner_or_admin()],
+        "put": [admin_required()],
         "delete": [admin_required()],
     }
 

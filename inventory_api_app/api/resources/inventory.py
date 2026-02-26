@@ -1,4 +1,4 @@
-from flask import request, current_app
+from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import joinedload
@@ -23,8 +23,7 @@ from inventory_api_app.api.schemas import (
 )
 from inventory_api_app.commons.pagination import paginate
 from inventory_api_app.extensions import db
-import smtplib
-from email.mime.text import MIMEText
+from inventory_api_app.services.email import EmailService
 
 
 class InventoryResource(Resource):
@@ -882,42 +881,8 @@ class OrderResource(Resource):
         order = schema.load(request.json, instance=order_db, session=db.session)
         db.session.commit()
 
-        def send_email(subject, body, sender, recipients, password, smtp_host):
-            current_app.logger.debug("Sending email: subject=%s, to=%s", subject, recipients)
-            msg = MIMEText(body)
-            msg["Subject"] = subject
-            msg["From"] = sender
-            msg["To"] = ", ".join(recipients)
-            try:
-                with smtplib.SMTP_SSL(smtp_host, 465) as smtp_server:
-                    smtp_server.login(sender, password)
-                    smtp_server.sendmail(sender, recipients, msg.as_string())
-            except smtplib.SMTPException:
-                current_app.logger.exception("Failed to send email: subject=%s", subject)
-
-        # Compose SMS on order submit
         if request.json['status'] == OrderStatus.SUBMITTED.value:
-            config = current_app.config
-            vendor = None
-            order_info = list()
-            for order_item in sorted(order_db.order_items, key=lambda o: o.product.vendor_id):
-                if vendor != order_item.product.vendor:
-                    order_info.append(f"{order_item.product.vendor}:")
-                    vendor = order_item.product.vendor
-                inventory = order_item.product.inventory_item[0]
-                order_info.append(
-                    f"{order_item.quantity} {order_item.product.unit.name}s"
-                    f" of {order_item.product.name}({inventory.quantity})"
-                )
-            order_info.append(f"Total cost: {order_db.cost:.2f}")
-            send_email(
-                subject="New inventory order",
-                body="\n".join(order_info),
-                sender=config["FROM_EMAIL"],
-                recipients=[config["TO_EMAIL"]],
-                password=config["EMAIL_PASS"],
-                smtp_host=config["EMAIL_HOST"],
-            )
+            EmailService.send_order_email(order_db)
             order.status = OrderStatus.RECEIVED
             db.session.commit()
         return {"msg": "order updated", "order": schema.dump(order)}

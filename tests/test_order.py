@@ -1,9 +1,11 @@
+from unittest.mock import patch, MagicMock
 from inventory_api_app.models import Order, OrderItem  # type: ignore[unresolved-import]
 from tests.factories import (  # type: ignore[unresolved-import]
     CategoryFactory,
     UnitFactory,
     VendorFactory,
     ProductFactory,
+    InventoryFactory,
     OrderFactory,
     OrderItemFactory,
 )
@@ -222,3 +224,49 @@ def test_get_order_item_list_paginated(client, db, admin_headers):
     assert "total" in data
     assert "page" in data
     assert "pages" in data
+
+
+# --- Email tests ---
+
+
+def test_submit_order_sends_email(client, db, admin_headers):
+    """PUT /order/<id> with status Submitted sends an order email."""
+    product = _create_product(db)
+    db.session.flush()
+
+    inventory = InventoryFactory(
+        product_id=product.id,
+        quantity=50.0,
+        capacity=100.0,
+        reorder_level=10.0,
+    )
+    db.session.add(inventory)
+    db.session.flush()
+
+    order = _create_order(db)
+    _create_order_item(db, order, product, quantity=5.0)
+
+    mock_thread = MagicMock()
+
+    with patch("inventory_api_app.services.email.threading.Thread", return_value=mock_thread) as thread_cls:
+        with patch("inventory_api_app.services.email.mail"):
+            rep = client.put(
+                f"/api/v1/order/{order.id}",
+                json={"status": "Submitted"},
+                headers=admin_headers,
+            )
+
+    assert rep.status_code == 200
+    assert rep.get_json()["msg"] == "order updated"
+
+    # Verify a Thread was created and started
+    thread_cls.assert_called_once()
+    mock_thread.start.assert_called_once()
+
+    # Extract the Message passed to send_async
+    call_kwargs = thread_cls.call_args
+    args = call_kwargs[1]["args"] if "args" in call_kwargs[1] else call_kwargs[0][1]
+    msg = args[1]
+
+    assert msg.subject == "New Inventory Order"
+    assert "test@example.com" in msg.recipients

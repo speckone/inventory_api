@@ -14,3 +14,4 @@ apispec-webframeworks>=1.2,<2
 psycopg2-binary>=2.9,<3
 gunicorn>=23.0,<24
 flask-limiter>=3.5,<4
+flask-mail>=0.9,<1

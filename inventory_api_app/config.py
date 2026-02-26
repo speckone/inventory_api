@@ -18,9 +18,12 @@ if not SECRET_KEY or len(SECRET_KEY) < 32:
 
 SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URI")
 
-FROM_EMAIL = os.getenv("FROM_EMAIL")
-TO_EMAIL = os.getenv("TO_EMAIL")
-EMAIL_PASS = os.getenv("EMAIL_PASS")
-EMAIL_HOST = os.getenv("EMAIL_HOST")
+MAIL_SERVER = os.getenv("MAIL_SERVER")
+MAIL_PORT = int(os.getenv("MAIL_PORT", "465"))
+MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "1") == "1"
+MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER")
+MAIL_ORDER_RECIPIENT = os.getenv("MAIL_ORDER_RECIPIENT")
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")

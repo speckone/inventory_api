@@ -9,6 +9,7 @@ from inventory_api_app.models import (  # type: ignore[unresolved-import]
     Order,
     OrderItem,
     Customer,
+    CustomerContact,
     Invoice,
     InvoiceItem,
 )
@@ -89,10 +90,19 @@ class CustomerFactory(factory.Factory):
     state = "TX"
     zip_code = "12345"
     phone = "555-0100"
-    email = factory.Sequence(lambda n: "customer%d@mail.com" % n)
 
     class Meta:
         model = Customer
+
+
+class CustomerContactFactory(factory.Factory):
+
+    name = factory.Sequence(lambda n: "contact%d" % n)
+    email = factory.Sequence(lambda n: "contact%d@mail.com" % n)
+    primary = False
+
+    class Meta:
+        model = CustomerContact
 
 
 class InvoiceFactory(factory.Factory):

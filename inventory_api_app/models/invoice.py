@@ -11,10 +11,21 @@ class Customer(SurrogatePK, Model):
     state = Column(db.String)
     zip_code = Column(db.String)
     phone = Column(db.String)
-    email = Column(db.String)
+    contacts = relationship('CustomerContact', backref='customer', cascade='all, delete-orphan')
 
     def __repr__(self):
         return self.name
+
+
+class CustomerContact(SurrogatePK, Model):
+    __tablename__ = 'customer_contact'
+    customer_id = reference_col('customer', index=True)
+    name = Column(db.String, nullable=False)
+    email = Column(db.String, nullable=False)
+    primary = Column(db.Boolean, default=False, nullable=False)
+
+    def __repr__(self):
+        return f'{self.name} <{self.email}>'
 
 
 class Invoice(SurrogatePK, Model):

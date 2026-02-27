@@ -1,6 +1,7 @@
-from inventory_api_app.models import Customer, Invoice, InvoiceItem  # type: ignore[unresolved-import]
+from inventory_api_app.models import Customer, CustomerContact, Invoice, InvoiceItem  # type: ignore[unresolved-import]
 from tests.factories import (  # type: ignore[unresolved-import]
     CustomerFactory,
+    CustomerContactFactory,
     InvoiceFactory,
     InvoiceItemFactory,
 )
@@ -37,6 +38,16 @@ def _create_invoice_item(db, invoice, **overrides):
 # --- Customer tests ---
 
 
+def _create_customer_contact(db, customer, **overrides):
+    """Helper to create a customer contact."""
+    defaults = dict(customer_id=customer.id)
+    defaults.update(overrides)
+    contact = CustomerContactFactory(**defaults)
+    db.session.add(contact)
+    db.session.commit()
+    return contact
+
+
 def test_create_customer(client, db, admin_headers):
     """POST /customer creates a new customer."""
     data = {
@@ -46,7 +57,6 @@ def test_create_customer(client, db, admin_headers):
         "state": "IL",
         "zip_code": "62704",
         "phone": "555-0200",
-        "email": "acme@example.com",
     }
 
     rep = client.post("/api/v1/customer", json=data, headers=admin_headers)
@@ -55,7 +65,6 @@ def test_create_customer(client, db, admin_headers):
     result = rep.get_json()
     assert result["msg"] == "customer created"
     assert result["customer"]["name"] == "Acme Corp"
-    assert result["customer"]["email"] == "acme@example.com"
 
 
 def test_get_customer(client, db, admin_headers):
@@ -300,3 +309,82 @@ def test_delete_invoice_item(client, db, admin_headers):
     assert rep.get_json()["msg"] == "invoice_item deleted"
 
     assert db.session.get(InvoiceItem, item_id) is None
+
+
+# --- CustomerContact tests ---
+
+
+def test_create_customer_contact(client, db, admin_headers):
+    """POST /customer/<id>/contact creates a new contact."""
+    customer = _create_customer(db)
+    data = {"name": "John Doe", "email": "john@acme.com", "primary": True}
+    rep = client.post(f"/api/v1/customer/{customer.id}/contact", json=data, headers=admin_headers)
+    assert rep.status_code == 201
+    result = rep.get_json()
+    assert result["msg"] == "customer contact created"
+    assert result["customer_contact"]["name"] == "John Doe"
+    assert result["customer_contact"]["email"] == "john@acme.com"
+    assert result["customer_contact"]["primary"] is True
+
+
+def test_get_customer_contacts(client, db, admin_headers):
+    """GET /customer/<id>/contact returns all contacts for a customer."""
+    customer = _create_customer(db)
+    _create_customer_contact(db, customer, name="Contact A", email="a@test.com")
+    _create_customer_contact(db, customer, name="Contact B", email="b@test.com")
+    rep = client.get(f"/api/v1/customer/{customer.id}/contact", headers=admin_headers)
+    assert rep.status_code == 200
+    data = rep.get_json()
+    assert len(data["results"]) == 2
+
+
+def test_update_customer_contact(client, db, admin_headers):
+    """PUT /customer/<id>/contact/<contact_id> updates a contact."""
+    customer = _create_customer(db)
+    contact = _create_customer_contact(db, customer, name="Old Name", email="old@test.com")
+    data = {"name": "New Name"}
+    rep = client.put(f"/api/v1/customer/{customer.id}/contact/{contact.id}", json=data, headers=admin_headers)
+    assert rep.status_code == 200
+    result = rep.get_json()
+    assert result["customer_contact"]["name"] == "New Name"
+
+
+def test_delete_customer_contact(client, db, admin_headers):
+    """DELETE /customer/<id>/contact/<contact_id> removes a contact."""
+    customer = _create_customer(db)
+    contact = _create_customer_contact(db, customer)
+    contact_id = contact.id
+    rep = client.delete(f"/api/v1/customer/{customer.id}/contact/{contact_id}", headers=admin_headers)
+    assert rep.status_code == 200
+    assert rep.get_json()["msg"] == "customer contact deleted"
+    assert db.session.get(CustomerContact, contact_id) is None
+
+
+def test_set_primary_contact(client, db, admin_headers):
+    """Setting a contact as primary unsets other primary contacts."""
+    customer = _create_customer(db)
+    c1 = _create_customer_contact(db, customer, name="First", email="first@test.com", primary=True)
+    c2 = _create_customer_contact(db, customer, name="Second", email="second@test.com", primary=False)
+    # Set c2 as primary
+    rep = client.put(
+        f"/api/v1/customer/{customer.id}/contact/{c2.id}",
+        json={"primary": True},
+        headers=admin_headers,
+    )
+    assert rep.status_code == 200
+    assert rep.get_json()["customer_contact"]["primary"] is True
+    # c1 should no longer be primary
+    db.session.refresh(c1)
+    assert c1.primary is False
+
+
+def test_customer_includes_contacts(client, db, admin_headers):
+    """GET /customer/<id> includes nested contacts."""
+    customer = _create_customer(db)
+    _create_customer_contact(db, customer, name="Main Contact", email="main@test.com", primary=True)
+    rep = client.get(f"/api/v1/customer/{customer.id}", headers=admin_headers)
+    assert rep.status_code == 200
+    data = rep.get_json()["customer"]
+    assert "contacts" in data
+    assert len(data["contacts"]) == 1
+    assert data["contacts"][0]["name"] == "Main Contact"

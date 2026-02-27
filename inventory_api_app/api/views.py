@@ -6,11 +6,12 @@ from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
 from inventory_api_app.api.resources import UserResource, UserList, OrderList, OrderResource, OrderItemList, \
     OrderItemResource, ProductList, ProductResource, VendorList, VendorResource, UnitList, UnitResource, \
     InventoryList, InventoryResource, CategoryList, CategoryResource, ProductHistoryResource, \
-    CustomerResource, CustomerList, InvoiceResource, InvoiceList, InvoiceItemResource, InvoiceItemList, \
+    CustomerResource, CustomerList, CustomerContactResource, CustomerContactList, \
+    InvoiceResource, InvoiceList, InvoiceItemResource, InvoiceItemList, \
     InvoiceItemTemplateResource, InvoiceItemTemplateList, AppSettingResource, AppSettingList
 from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchema, VendorSchema, ProductSchema, \
-    OrderSchema, OrderItemSchema, CategorySchema, CustomerSchema, InvoiceSchema, InvoiceItemSchema, \
-    InvoiceItemTemplateSchema, AppSettingSchema
+    OrderSchema, OrderItemSchema, CategorySchema, CustomerSchema, CustomerContactSchema, InvoiceSchema, \
+    InvoiceItemSchema, InvoiceItemTemplateSchema, AppSettingSchema
 from inventory_api_app.extensions import apispec
 from flask_cors import CORS
 
@@ -52,6 +53,8 @@ api.add_resource(OrderResource, '/order/<int:order_id>')
 api.add_resource(OrderList, '/order')
 api.add_resource(CustomerResource, '/customer/<int:customer_id>')
 api.add_resource(CustomerList, '/customer')
+api.add_resource(CustomerContactResource, '/customer/<int:customer_id>/contact/<int:contact_id>')
+api.add_resource(CustomerContactList, '/customer/<int:customer_id>/contact')
 api.add_resource(InvoiceResource, '/invoice/<int:invoice_id>')
 api.add_resource(InvoiceList, '/invoice')
 api.add_resource(InvoiceItemResource, '/invoiceitem/<int:invoice_item_id>')
@@ -92,6 +95,9 @@ def register_apispec_views(app):
         apispec.spec.components.schema("CustomerSchema", schema=CustomerSchema)
         apispec.spec.path(view=CustomerResource, app=app)
         apispec.spec.path(view=CustomerList, app=app)
+        apispec.spec.components.schema("CustomerContactSchema", schema=CustomerContactSchema)
+        apispec.spec.path(view=CustomerContactResource, app=app)
+        apispec.spec.path(view=CustomerContactList, app=app)
         apispec.spec.components.schema("InvoiceSchema", schema=InvoiceSchema)
         apispec.spec.path(view=InvoiceResource, app=app)
         apispec.spec.path(view=InvoiceList, app=app)

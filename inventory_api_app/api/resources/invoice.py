@@ -1,9 +1,10 @@
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
-from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem, InvoiceItemTemplate
+from inventory_api_app.models.invoice import Customer, CustomerContact, Invoice, InvoiceItem, InvoiceItemTemplate
 from inventory_api_app.api.schemas.invoice import (
     CustomerSchema,
+    CustomerContactSchema,
     InvoiceSchema,
     InvoiceItemSchema,
     InvoiceItemTemplateSchema,
@@ -154,6 +155,192 @@ class CustomerList(Resource):
         db.session.commit()
 
         return {"msg": "customer created", "customer": schema.dump(customer)}, 201
+
+
+class CustomerContactResource(Resource):
+    """Single customer contact resource
+    ---
+    get:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: customer_id
+          schema:
+            type: integer
+        - in: path
+          name: contact_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer_contact: CustomerContactSchema
+        404:
+          description: contact does not exist
+    put:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: customer_id
+          schema:
+            type: integer
+        - in: path
+          name: contact_id
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              CustomerContactSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: customer contact updated
+                  customer_contact: CustomerContactSchema
+        404:
+          description: contact does not exist
+    delete:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: customer_id
+          schema:
+            type: integer
+        - in: path
+          name: contact_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: customer contact deleted
+        404:
+          description: contact does not exist
+    """
+    method_decorators = [jwt_required()]
+
+    def get(self, customer_id, contact_id):
+        schema = CustomerContactSchema()
+        Customer.query.get_or_404(customer_id)
+        contact = CustomerContact.query.filter_by(
+            id=contact_id, customer_id=customer_id
+        ).first_or_404()
+        return {"customer_contact": schema.dump(contact)}
+
+    def put(self, customer_id, contact_id):
+        schema = CustomerContactSchema(partial=True)
+        Customer.query.get_or_404(customer_id)
+        contact = CustomerContact.query.filter_by(
+            id=contact_id, customer_id=customer_id
+        ).first_or_404()
+        contact = schema.load(request.json, instance=contact, session=db.session)
+
+        if contact.primary:
+            CustomerContact.query.filter(
+                CustomerContact.customer_id == customer_id,
+                CustomerContact.id != contact_id,
+            ).update({"primary": False})
+
+        db.session.commit()
+        return {"msg": "customer contact updated", "customer_contact": schema.dump(contact)}
+
+    def delete(self, customer_id, contact_id):
+        Customer.query.get_or_404(customer_id)
+        contact = CustomerContact.query.filter_by(
+            id=contact_id, customer_id=customer_id
+        ).first_or_404()
+        db.session.delete(contact)
+        db.session.commit()
+        return {"msg": "customer contact deleted"}
+
+
+class CustomerContactList(Resource):
+    """Customer contacts list and creation
+    ---
+    get:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: customer_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerContactSchema'
+    post:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: customer_id
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              CustomerContactSchema
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: customer contact created
+                  customer_contact: CustomerContactSchema
+    """
+    method_decorators = [jwt_required()]
+
+    def get(self, customer_id):
+        schema = CustomerContactSchema(many=True)
+        Customer.query.get_or_404(customer_id)
+        contacts = CustomerContact.query.filter_by(customer_id=customer_id).all()
+        return {"results": schema.dump(contacts)}
+
+    def post(self, customer_id):
+        schema = CustomerContactSchema()
+        Customer.query.get_or_404(customer_id)
+        contact = schema.load(request.json, session=db.session)
+        contact.customer_id = customer_id
+
+        if contact.primary:
+            CustomerContact.query.filter_by(
+                customer_id=customer_id
+            ).update({"primary": False})
+
+        db.session.add(contact)
+        db.session.commit()
+        return {"msg": "customer contact created", "customer_contact": schema.dump(contact)}, 201
 
 
 class InvoiceResource(Resource):

@@ -1,11 +1,23 @@
-from inventory_api_app.models.invoice import Customer, Invoice, InvoiceItem, InvoiceItemTemplate
+from inventory_api_app.models.invoice import Customer, CustomerContact, Invoice, InvoiceItem, InvoiceItemTemplate
 from inventory_api_app.extensions import ma
 from marshmallow import fields
+
+
+class CustomerContactSchema(ma.SQLAlchemyAutoSchema):
+    customer_id = fields.Integer(dump_only=True)
+
+    class Meta:
+        model = CustomerContact
+        load_instance = True
+        include_fk = True
 
 
 class CustomerSchema(ma.SQLAlchemyAutoSchema):
     invoices = fields.List(
         fields.Nested("InvoiceSchema", dump_only=True, exclude=("customer",))
+    )
+    contacts = fields.List(
+        fields.Nested("CustomerContactSchema", dump_only=True)
     )
 
     class Meta:

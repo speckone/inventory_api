@@ -80,7 +80,6 @@ celerybeat-schedule
 .flaskenv
 
 # db
-migrations
 pgdata/
 
 # IDE

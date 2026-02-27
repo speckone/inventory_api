@@ -33,6 +33,7 @@ class Invoice(SurrogatePK, Model):
     invoice_number = Column(db.Integer, unique=True, nullable=False)
     date = Column(db.DateTime)
     paid = Column(db.Boolean, default=False, nullable=False)
+    sent = Column(db.Boolean, default=False, nullable=False)
     customer_id = reference_col('customer', index=True)
     customer = relationship('Customer', backref='invoices')
 

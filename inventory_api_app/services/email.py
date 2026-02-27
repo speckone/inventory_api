@@ -2,6 +2,8 @@ import smtplib
 import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from flask import current_app, render_template
 from inventory_api_app.extensions import db
 from inventory_api_app.models.settings import AppSetting
@@ -9,7 +11,7 @@ from inventory_api_app.models.settings import AppSetting
 
 class EmailService:
     @staticmethod
-    def send_async(app, recipient, subject, html):
+    def send_async(app, recipient, subject, html, cc=None, attachments=None):
         """Send email in background thread with app context."""
         with app.app_context():
             try:
@@ -31,21 +33,39 @@ class EmailService:
                     app.logger.warning("Email settings incomplete, skipping send")
                     return
 
-                msg = MIMEMultipart('alternative')
+                if attachments:
+                    msg = MIMEMultipart('mixed')
+                    html_part = MIMEMultipart('alternative')
+                    html_part.attach(MIMEText(html, 'html'))
+                    msg.attach(html_part)
+                    for att in attachments:
+                        part = MIMEBase(*att['content_type'].split('/'))
+                        part.set_payload(att['content'])
+                        encoders.encode_base64(part)
+                        part.add_header('Content-Disposition', 'attachment', filename=att['filename'])
+                        msg.attach(part)
+                else:
+                    msg = MIMEMultipart('alternative')
+                    msg.attach(MIMEText(html, 'html'))
+
                 msg['Subject'] = subject
                 msg['From'] = sender_val
                 msg['To'] = recipient
-                msg.attach(MIMEText(html, 'html'))
+
+                if cc:
+                    msg['Cc'] = ', '.join(cc)
+
+                all_recipients = [recipient] + (cc or [])
 
                 if use_ssl_val:
                     with smtplib.SMTP_SSL(server_val, port_val) as smtp:
                         smtp.login(username_val, password_val)
-                        smtp.sendmail(sender_val, [recipient], msg.as_string())
+                        smtp.sendmail(sender_val, all_recipients, msg.as_string())
                 else:
                     with smtplib.SMTP(server_val, port_val) as smtp:
                         smtp.starttls()
                         smtp.login(username_val, password_val)
-                        smtp.sendmail(sender_val, [recipient], msg.as_string())
+                        smtp.sendmail(sender_val, all_recipients, msg.as_string())
             except Exception:
                 app.logger.exception("Failed to send email: subject=%s", subject)
 
@@ -82,3 +102,42 @@ class EmailService:
         app = current_app._get_current_object()
         thread = threading.Thread(target=cls.send_async, args=(app, to_email, "New Inventory Order", html))
         thread.start()
+
+    @classmethod
+    def send_invoice_email(cls, invoice, customer, pdf_bytes):
+        """Send invoice email with PDF attachment to customer contacts."""
+        from inventory_api_app.models.invoice import CustomerContact
+
+        contacts = CustomerContact.query.filter_by(customer_id=customer.id).all()
+        primary = next((c for c in contacts if c.primary), None)
+        if not primary:
+            current_app.logger.warning("No primary contact for customer %s", customer.id)
+            return {"error": "No primary contact found for this customer"}, 400
+
+        to_email = primary.email
+        cc_emails = [c.email for c in contacts if not c.primary and c.email]
+
+        html = render_template(
+            "emails/invoice_sent.html",
+            contact_name=primary.name,
+            invoice_number=invoice.invoice_number,
+            subtotal=f"{invoice.subtotal:.2f}" if invoice.subtotal else "0.00",
+            date=str(invoice.date) if invoice.date else "",
+            customer_name=customer.name,
+        )
+
+        attachments = [{
+            "filename": f"invoice_{invoice.invoice_number}.pdf",
+            "content": pdf_bytes,
+            "content_type": "application/pdf",
+        }]
+
+        app = current_app._get_current_object()
+        subject = f"Invoice #{invoice.invoice_number} from Esso Coffeehouse"
+        thread = threading.Thread(
+            target=cls.send_async,
+            args=(app, to_email, subject, html),
+            kwargs={"cc": cc_emails, "attachments": attachments},
+        )
+        thread.start()
+        return None

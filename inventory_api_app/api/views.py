@@ -8,7 +8,7 @@ from inventory_api_app.api.resources import UserResource, UserList, OrderList, O
     InventoryList, InventoryResource, CategoryList, CategoryResource, ProductHistoryResource, \
     CustomerResource, CustomerList, CustomerContactResource, CustomerContactList, \
     InvoiceResource, InvoiceList, InvoiceItemResource, InvoiceItemList, \
-    InvoiceItemTemplateResource, InvoiceItemTemplateList, AppSettingResource, AppSettingList
+    InvoiceItemTemplateResource, InvoiceItemTemplateList, InvoiceSendResource, AppSettingResource, AppSettingList
 from inventory_api_app.api.schemas import UserSchema, InventorySchema, UnitSchema, VendorSchema, ProductSchema, \
     OrderSchema, OrderItemSchema, CategorySchema, CustomerSchema, CustomerContactSchema, InvoiceSchema, \
     InvoiceItemSchema, InvoiceItemTemplateSchema, AppSettingSchema
@@ -57,6 +57,7 @@ api.add_resource(CustomerContactResource, '/customer/<int:customer_id>/contact/<
 api.add_resource(CustomerContactList, '/customer/<int:customer_id>/contact')
 api.add_resource(InvoiceResource, '/invoice/<int:invoice_id>')
 api.add_resource(InvoiceList, '/invoice')
+api.add_resource(InvoiceSendResource, '/invoice/<int:invoice_id>/send')
 api.add_resource(InvoiceItemResource, '/invoiceitem/<int:invoice_item_id>')
 api.add_resource(InvoiceItemList, '/invoiceitem')
 api.add_resource(InvoiceItemTemplateResource, '/invoiceitemtemplate/<int:invoice_item_template_id>')

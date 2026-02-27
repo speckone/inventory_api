@@ -2,6 +2,8 @@ from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 from inventory_api_app.models.invoice import Customer, CustomerContact, Invoice, InvoiceItem, InvoiceItemTemplate
+from inventory_api_app.auth.decorators import admin_required
+from inventory_api_app.services.email import EmailService
 from inventory_api_app.api.schemas.invoice import (
     CustomerSchema,
     CustomerContactSchema,
@@ -793,3 +795,58 @@ class InvoiceItemTemplateList(Resource):
             "msg": "invoice_item_template created",
             "invoice_item_template": schema.dump(invoice_item_template),
         }, 201
+
+
+class InvoiceSendResource(Resource):
+    """Send invoice via email
+    ---
+    post:
+      tags:
+        - api
+      parameters:
+        - in: path
+          name: invoice_id
+          schema:
+            type: integer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                pdf:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: email queued
+        400:
+          description: missing PDF or no primary contact
+        404:
+          description: invoice not found
+    """
+
+    method_decorators = [admin_required()]
+
+    def post(self, invoice_id):
+        invoice = db.session.get(Invoice, invoice_id)
+        if not invoice:
+            return {"msg": "Invoice not found"}, 404
+
+        customer = db.session.get(Customer, invoice.customer_id)
+        if not customer:
+            return {"msg": "Customer not found"}, 404
+
+        pdf_file = request.files.get("pdf")
+        if not pdf_file:
+            return {"msg": "PDF file is required"}, 400
+
+        pdf_bytes = pdf_file.read()
+
+        error = EmailService.send_invoice_email(invoice, customer, pdf_bytes)
+        if error:
+            return error
+
+        invoice.update(sent=True)
+
+        return {"msg": "Invoice email queued"}, 200

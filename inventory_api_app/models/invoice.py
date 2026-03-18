@@ -11,6 +11,7 @@ class Customer(SurrogatePK, Model):
     state = Column(db.String)
     zip_code = Column(db.String)
     phone = Column(db.String)
+    short_code = Column(db.String, unique=True, nullable=True)
     contacts = relationship('CustomerContact', backref='customer', cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -74,6 +75,7 @@ class InvoiceItemTemplate(SurrogatePK, Model):
     __tablename__ = 'invoice_item_template'
     name = Column(db.String, unique=True, nullable=False)
     price_per_unit = Column(db.Float)
+    short_code = Column(db.String, unique=True, nullable=True)
 
     def __repr__(self):
         return self.name

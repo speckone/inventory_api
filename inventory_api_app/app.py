@@ -19,6 +19,12 @@ def create_app(testing=False, cli=False):
     register_apispec_views(app)
     register_error_handlers(app)
 
+    # Start Telegram bot polling (outbound only — works behind firewall)
+    if not app.config.get("TESTING"):
+        from inventory_api_app.services.telegram import TelegramService
+
+        TelegramService.start_polling(app)
+
     return app
 
 

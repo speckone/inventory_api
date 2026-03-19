@@ -87,6 +87,7 @@ class TelegramService:
 
         invoice = Invoice.query.filter_by(
             customer_id=customer.id,
+            paid=False,
             sent=False,
         ).first()
 

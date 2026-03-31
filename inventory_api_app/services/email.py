@@ -11,7 +11,7 @@ from inventory_api_app.models.settings import AppSetting
 
 class EmailService:
     @staticmethod
-    def send_async(app, recipient, subject, html, cc=None, attachments=None):
+    def send_async(app, recipient, subject, html, cc=None, bcc=None, attachments=None):
         """Send email in background thread with app context."""
         with app.app_context():
             try:
@@ -55,7 +55,14 @@ class EmailService:
                 if cc:
                     msg['Cc'] = ', '.join(cc)
 
-                all_recipients = [recipient] + (cc or [])
+                if bcc:
+                    msg['Bcc'] = bcc if isinstance(bcc, str) else ', '.join(bcc)
+
+                bcc_list = []
+                if bcc:
+                    bcc_list = [bcc] if isinstance(bcc, str) else list(bcc)
+
+                all_recipients = [recipient] + (cc or []) + bcc_list
 
                 if use_ssl_val:
                     with smtplib.SMTP_SSL(server_val, port_val) as smtp:
@@ -137,7 +144,7 @@ class EmailService:
         thread = threading.Thread(
             target=cls.send_async,
             args=(app, to_email, subject, html),
-            kwargs={"cc": cc_emails, "attachments": attachments},
+            kwargs={"cc": cc_emails, "bcc": "sharon@essocoffeeshop.com", "attachments": attachments},
         )
         thread.start()
         return None

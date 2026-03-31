@@ -44,6 +44,7 @@ class Product(SurrogatePK, Model):
     category = relationship('Category', backref='products')
     vendor_id = reference_col('vendor', index=True)
     vendor = relationship('Vendor', backref='products')
+    archived = Column(db.Boolean, default=False, nullable=False, server_default='false')
 
     def __repr__(self):
         return self.name

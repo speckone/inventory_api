@@ -306,7 +306,10 @@ class ProductList(Resource):
 
     def get(self):
         schema = ProductSchema(many=True)
+        archived = request.args.get('archived', 'false')
         query = Product.query
+        if archived != 'true':
+            query = query.filter(Product.archived == False)  # noqa: E712
         return paginate(query, schema)
 
     def post(self):

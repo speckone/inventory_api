@@ -146,7 +146,10 @@ class CustomerList(Resource):
 
     def get(self):
         schema = CustomerSchema(many=True)
+        archived = request.args.get('archived', 'false')
         query = Customer.query
+        if archived != 'true':
+            query = query.filter(Customer.archived == False)  # noqa: E712
         return paginate(query, schema)
 
     def post(self):

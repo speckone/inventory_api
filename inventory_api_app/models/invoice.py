@@ -12,6 +12,7 @@ class Customer(SurrogatePK, Model):
     zip_code = Column(db.String)
     phone = Column(db.String)
     short_code = Column(db.String, unique=True, nullable=True)
+    archived = Column(db.Boolean, default=False, nullable=False, server_default='false')
     contacts = relationship('CustomerContact', backref='customer', cascade='all, delete-orphan')
 
     def __repr__(self):
